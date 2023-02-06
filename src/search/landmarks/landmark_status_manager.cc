@@ -28,7 +28,7 @@ void LandmarkStatusManager::process_initial_state(
 }
 
 void LandmarkStatusManager::set_past_landmarks_for_initial_state(
-    const State &initial_state, utils::LogProxy &/*log*/) {
+    const State &initial_state, utils::LogProxy & /*log*/) {
     BitsetView past = get_past_landmarks(initial_state);
     for (auto &node : lm_graph.get_nodes()) {
         if (!node->get_landmark().is_true_in_state(initial_state)) {
@@ -66,7 +66,7 @@ void LandmarkStatusManager::process_state_transition(
         if (!parent_past.test(id) && past.test(id)
             && !lm_graph.get_node(id)->get_landmark().is_true_in_state(
                 ancestor_state)) {
-            past.reset();
+            past.reset(id);
         }
     }
 }
