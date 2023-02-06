@@ -17,7 +17,6 @@ class LandmarkStatusManager {
     PerStateBitset past_lms;
     std::vector<LandmarkStatus> lm_status;
 
-    bool landmark_is_leaf(const LandmarkNode &node, const BitsetView &past) const;
     bool landmark_needed_again(int id, const State &state);
 
     void set_past_landmarks_for_initial_state(
@@ -31,7 +30,7 @@ public:
 
     void process_initial_state(
         const State &initial_state, utils::LogProxy &log);
-    bool process_state_transition(
+    void process_state_transition(
         const State &parent_ancestor_state, OperatorID op_id,
         const State &ancestor_state);
 
