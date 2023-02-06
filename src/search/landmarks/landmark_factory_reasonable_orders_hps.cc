@@ -13,7 +13,8 @@ using namespace std;
 namespace landmarks {
 LandmarkFactoryReasonableOrdersHPS::LandmarkFactoryReasonableOrdersHPS(const plugins::Options &opts)
     : LandmarkFactory(opts),
-      lm_factory(opts.get<shared_ptr<LandmarkFactory>>("lm_factory")) {
+      lm_factory(opts.get<shared_ptr<LandmarkFactory>>("lm_factory")),
+      use_obedient_reasonable(opts.get<bool>("use_obedient_reasonable")) {
 }
 
 void LandmarkFactoryReasonableOrdersHPS::generate_landmarks(const shared_ptr<AbstractTask> &task) {
@@ -29,10 +30,13 @@ void LandmarkFactoryReasonableOrdersHPS::generate_landmarks(const shared_ptr<Abs
         log << "approx. reasonable orders" << endl;
     }
     approximate_reasonable_orders(task_proxy, false);
-    if (log.is_at_least_normal()) {
-        log << "approx. obedient reasonable orders" << endl;
+
+    if (use_obedient_reasonable) {
+        if (log.is_at_least_normal()) {
+            log << "approx. obedient reasonable orders" << endl;
+        }
+        approximate_reasonable_orders(task_proxy, true);
     }
-    approximate_reasonable_orders(task_proxy, true);
 
     mk_acyclic_graph();
 }
@@ -394,6 +398,7 @@ public:
                 "2004"));
 
         add_option<shared_ptr<LandmarkFactory>>("lm_factory");
+        add_option<bool>("use_obedient_reasonable", "help string", "false");
         add_landmark_factory_options_to_feature(*this);
 
         // TODO: correct?
