@@ -5,5 +5,14 @@ release_no_lp = ["-DCMAKE_BUILD_TYPE=Release", "-DUSE_LP=NO"]
 glibcxx_debug = ["-DCMAKE_BUILD_TYPE=Debug", "-DUSE_LP=NO", "-DUSE_GLIBCXX_DEBUG=YES"]
 minimal = ["-DCMAKE_BUILD_TYPE=Release", "-DDISABLE_PLUGINS_BY_DEFAULT=YES"]
 
-DEFAULT = "release"
-DEBUG = "debug"
+IPC23_STANDARD = [
+    "-DDISABLE_PLUGINS_BY_DEFAULT=YES",
+    "-DPLUGIN_LANDMARKS_ENABLED=True",
+]
+ipc23 = ["-DCMAKE_BUILD_TYPE=Release"] + IPC23_STANDARD
+ipc23_debug = ["-DCMAKE_BUILD_TYPE=Debug"] + IPC23_STANDARD
+ipc23_no_lp = ipc23 + ["-DUSE_LP=NO"]
+ipc23_no_lp_debug = ipc23_debug + ["-DUSE_LP=NO"]
+
+DEFAULT = "ipc23"
+DEBUG = "ipc23_debug"
