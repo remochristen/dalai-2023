@@ -42,6 +42,7 @@ Stage: run
     PLANFILE="$3"
 
     /fast-downward.py \
+        --build "ipc23" \
         --plan-file "$PLANFILE" \
         "$DOMAINFILE" \
         "$PROBLEMFILE" \
