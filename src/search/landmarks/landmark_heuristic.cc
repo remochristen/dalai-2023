@@ -12,32 +12,12 @@
 using namespace std;
 
 namespace landmarks {
-static bool landmark_is_interesting(
-    const State &state, const BitsetView &reached,
-    const landmarks::LandmarkNode &lm_node, bool all_lms_reached) {
-    /*
-      We consider a landmark interesting in two (exclusive) cases:
-      (1) If all landmarks are reached and the landmark must hold in the goal
-          but does not hold in the current state.
-      (2) If it has not been reached before and all its parents are reached.
-    */
-
-    if (all_lms_reached) {
-        const Landmark &landmark = lm_node.get_landmark();
-        return landmark.is_true_in_goal && !landmark.is_true_in_state(state);
-    } else {
-        return !reached.test(lm_node.get_id()) &&
-               all_of(lm_node.parents.begin(), lm_node.parents.end(),
-                      [&](const pair<LandmarkNode *, EdgeType> parent) {
-                          return reached.test(parent.first->get_id());
-                      });
-    }
-}
-
 LandmarkHeuristic::LandmarkHeuristic(
     const plugins::Options &opts)
     : Heuristic(opts),
       use_preferred_operators(opts.get<bool>("pref")),
+      simple_more_interesting(opts.get<bool>("simple_more_interesting")),
+      interesting_landmarks(opts.get<InterestingIf>("interesting_if")),
       successor_generator(nullptr) {
 }
 
@@ -111,10 +91,12 @@ void LandmarkHeuristic::generate_preferred_operators(
     vector<OperatorID> preferred_operators_disjunctive;
 
     bool all_landmarks_reached = true;
-    for (int i = 0; i < reached.size(); ++i) {
-        if (!reached.test(i)) {
-            all_landmarks_reached = false;
-            break;
+    if (interesting_landmarks == InterestingIf::LEGACY) {
+        for (int i = 0; i < reached.size(); ++i) {
+            if (!reached.test(i)) {
+                all_landmarks_reached = false;
+                break;
+            }
         }
     }
 
@@ -138,16 +120,84 @@ void LandmarkHeuristic::generate_preferred_operators(
     }
 
     OperatorsProxy operators = task_proxy.get_operators();
-    if (preferred_operators_simple.empty()) {
+    if (simple_more_interesting) {
+        // Legacy version.
+        if (preferred_operators_simple.empty()) {
+            for (OperatorID op_id : preferred_operators_disjunctive) {
+                set_preferred(operators[op_id]);
+            }
+        } else {
+            for (OperatorID op_id : preferred_operators_simple) {
+                set_preferred(operators[op_id]);
+            }
+        }
+    } else {
+        // New and improved, maybe.
         for (OperatorID op_id : preferred_operators_disjunctive) {
             set_preferred(operators[op_id]);
         }
-    } else {
         for (OperatorID op_id : preferred_operators_simple) {
             set_preferred(operators[op_id]);
         }
     }
 }
+
+bool LandmarkHeuristic::landmark_is_interesting(
+    const State &state, const BitsetView &reached,
+    const LandmarkNode &lm_node, bool all_lms_reached) {
+    LandmarkStatus status =
+        lm_status_manager->get_landmark_status(lm_node.get_id());
+    bool is_interesting = false;
+    switch (interesting_landmarks) {
+    case LEGACY:
+        /*
+          We consider a landmark interesting in two (exclusive) cases:
+          (1) If all landmarks are reached and the landmark must hold in the
+              goal but does not hold in the current state.
+          (2) If it has not been reached before and all its parents are reached.
+        */
+
+        if (all_lms_reached) {
+            const Landmark &landmark = lm_node.get_landmark();
+            is_interesting =
+                landmark.is_true_in_goal && !landmark.is_true_in_state(state);
+        } else {
+            is_interesting =
+                !reached.test(lm_node.get_id())
+                    && all_of(lm_node.parents.begin(), lm_node.parents.end(),
+                              [&](const pair<LandmarkNode *, EdgeType> parent) {
+                                  return reached.test(parent.first->get_id());
+                              });
+        }
+        break;
+    case IS_FUTURE:
+        /*
+          We consider a landmark interesting if it is a "future landmark", i.e.,
+          either lm_not_reached or lm_needed_again (which simplifies to the
+          negation of lm_reached).
+        */
+        is_interesting = status != PAST;
+	    break;
+    case PARENTS_ARE_PAST:
+        /*
+          We conside  a landmark interesting if it is a "future landmark" and
+          all its parents are "past landmarks", i.e., the parents are either
+          lm_reached or lm_needed_again (which simplifies to the negation of
+          lm_not_reached).
+        */
+        is_interesting = status != PAST
+            && all_of(lm_node.parents.begin(), lm_node.parents.end(),
+                      [&](const pair<LandmarkNode *, EdgeType> parent) {
+                          return lm_status_manager->get_landmark_status(
+                              parent.first->get_id() != IS_FUTURE);
+                      });
+	    break;
+    default:
+	    break;
+    }
+    return is_interesting;
+}
+
 
 int LandmarkHeuristic::compute_heuristic(const State &ancestor_state) {
     State state = convert_ancestor_state(ancestor_state);
@@ -177,6 +227,7 @@ void LandmarkHeuristic::notify_state_transition(
     }
 }
 
+
 void LandmarkHeuristic::add_options_to_feature(plugins::Feature &feature) {
     feature.add_option<shared_ptr<LandmarkFactory>>(
         "lm_factory",
@@ -188,9 +239,17 @@ void LandmarkHeuristic::add_options_to_feature(plugins::Feature &feature) {
         "identify preferred operators (see OptionCaveats#"
         "Using_preferred_operators_with_landmark_heuristics)",
         "false");
+    feature.add_option<bool>("simple_more_interesting", "", "true");
+    feature.add_option<InterestingIf>("interesting_if", "", "legacy");
+
     Heuristic::add_options_to_feature(feature);
 
     feature.document_property("preferred operators",
                               "yes (if enabled; see ``pref`` option)");
 }
+static plugins::TypedEnumPlugin<InterestingIf> _interesting_if_enum_plugin({
+        {"legacy", ""},
+        {"is_future", ""},
+        {"parents_are_past", ""}
+    });
 }

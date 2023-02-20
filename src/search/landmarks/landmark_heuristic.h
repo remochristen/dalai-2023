@@ -15,13 +15,18 @@ class LandmarkGraph;
 class LandmarkNode;
 class LandmarkStatusManager;
 
+enum InterestingIf {LEGACY, IS_FUTURE, PARENTS_ARE_PAST};
+
 class LandmarkHeuristic : public Heuristic {
 protected:
     std::shared_ptr<LandmarkGraph> lm_graph;
     const bool use_preferred_operators;
+    const bool simple_more_interesting;
+    const InterestingIf interesting_landmarks;
 
     std::unique_ptr<LandmarkStatusManager> lm_status_manager;
-    std::unique_ptr<successor_generator::SuccessorGenerator> successor_generator;
+    std::unique_ptr<successor_generator::SuccessorGenerator>
+        successor_generator;
 
     void initialize(const plugins::Options &opts);
     void compute_landmark_graph(const plugins::Options &opts);
@@ -40,8 +45,11 @@ protected:
     */
     virtual int get_heuristic_value(const State &state) = 0;
 
-    void generate_preferred_operators(
-        const State &state, const BitsetView &reached);
+    void generate_preferred_operators(const State &state,
+                                      const BitsetView &reached);
+    bool landmark_is_interesting(const State &state, const BitsetView &reached,
+                                 const LandmarkNode &lm_node,
+                                 bool all_lms_reached);
     virtual int compute_heuristic(const State &ancestor_state) override;
 public:
     explicit LandmarkHeuristic(const plugins::Options &opts);
