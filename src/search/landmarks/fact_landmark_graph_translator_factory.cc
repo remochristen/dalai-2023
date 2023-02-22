@@ -56,7 +56,7 @@ void FactLandmarkGraphTranslatorFactory::add_edges(
     }
 }
 
-shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::get_landmark_graph(
+shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::compute_landmark_graph(
     const shared_ptr<AbstractTask> &task) {
     const TaskProxy task_proxy(*task);
     const State &initial_state = task_proxy.get_initial_state();
@@ -75,6 +75,7 @@ shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::g
                  << " are strong and "
                  << graph->get_number_of_weak_orderings()
                  << " are weak." << endl;
+    graph->dump_dot();
     return graph;
 }
 

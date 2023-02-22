@@ -37,6 +37,7 @@ public:
     void set(int index);
     void reset(int index);
     void reset();
+    void set();
     bool test(int index) const;
     void intersect(const BitsetView &other);
     int size() const;

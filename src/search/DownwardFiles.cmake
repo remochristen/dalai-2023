@@ -709,6 +709,9 @@ fast_downward_plugin(
     SOURCES
         landmarks/dalm_graph
         landmarks/dalm_graph_factory
+        landmarks/dalm_heuristic
+        landmarks/dalm_status_manager
+        landmarks/dalm_sum_heuristic
         landmarks/exploration
         landmarks/fact_landmark_graph_translator_factory
         landmarks/landmark

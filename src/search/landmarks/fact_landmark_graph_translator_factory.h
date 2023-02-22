@@ -21,10 +21,9 @@ class FactLandmarkGraphTranslatorFactory : public LandmarkGraphFactory {
 public:
     explicit FactLandmarkGraphTranslatorFactory(const plugins::Options &opts);
 
-    virtual std::shared_ptr<DisjunctiveActionLandmarkGraph> get_landmark_graph(
+    virtual std::shared_ptr<DisjunctiveActionLandmarkGraph> compute_landmark_graph(
         const std::shared_ptr<AbstractTask> &task) override;
 };
-
 }
 
 #endif

@@ -12,7 +12,7 @@ class LandmarkGraphFactory {
 public:
     virtual ~LandmarkGraphFactory() = default;
 
-    virtual std::shared_ptr<DisjunctiveActionLandmarkGraph> get_landmark_graph(
+    virtual std::shared_ptr<DisjunctiveActionLandmarkGraph> compute_landmark_graph(
         const std::shared_ptr<AbstractTask> &task) = 0;
 };
 }
