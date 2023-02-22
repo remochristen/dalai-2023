@@ -12,10 +12,8 @@ class LandmarkGraphFactory {
 public:
     virtual ~LandmarkGraphFactory() = default;
 
-    virtual void initialize(
-        const std::shared_ptr<AbstractTask> &original_task) = 0;
-
-    virtual dalm_graph get_landmark_graph(const State &state) = 0;
+    virtual std::shared_ptr<DisjunctiveActionLandmarkGraph> get_landmark_graph(
+        const std::shared_ptr<AbstractTask> &task) = 0;
 };
 }
 

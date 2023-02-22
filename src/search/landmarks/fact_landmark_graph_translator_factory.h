@@ -10,12 +10,7 @@ class LandmarkFactory;
 
 class FactLandmarkGraphTranslatorFactory : public LandmarkGraphFactory {
     const std::shared_ptr<LandmarkFactory> lm;
-
-    std::shared_ptr<AbstractTask> task;
-
     std::map<std::set<int>, size_t> ids;
-
-    bool initialized = false;
 
     std::vector<size_t> add_nodes(
         dalm_graph &graph, const LandmarkGraph &lm_graph,
@@ -26,11 +21,8 @@ class FactLandmarkGraphTranslatorFactory : public LandmarkGraphFactory {
 public:
     explicit FactLandmarkGraphTranslatorFactory(const plugins::Options &opts);
 
-    virtual void initialize(
-        const std::shared_ptr<AbstractTask> &original_task) override;
-
     virtual std::shared_ptr<DisjunctiveActionLandmarkGraph> get_landmark_graph(
-        const State &state) override;
+        const std::shared_ptr<AbstractTask> &task) override;
 };
 
 }

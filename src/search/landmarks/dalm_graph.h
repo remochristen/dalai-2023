@@ -1,7 +1,7 @@
 #ifndef LANDMARKS_DALM_GRAPH_H
 #define LANDMARKS_DALM_GRAPH_H
 
-#include "../landmarks/landmark_graph.h"
+#include "landmark_graph.h"
 
 #include <map>
 #include <set>

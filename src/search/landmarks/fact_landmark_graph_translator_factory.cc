@@ -1,28 +1,12 @@
 #include "fact_landmark_graph_translator_factory.h"
 
-#include "../landmarks/landmark_factory.h"
-#include "../utils/logging.h"
+#include "landmark_factory.h"
 
 #include "../plugins/plugin.h"
 
 using namespace std;
 
-#ifndef NDEBUG
-static bool is_initial_state(const State &state) {
-    bool match = true;
-    for (size_t i = 0; i < state.get_unpacked_values().size(); ++i) {
-        if (state.get_unpacked_values()[i]
-            != state.get_task().get_initial_state().get_unpacked_values()[i]) {
-            match = false;
-            break;
-        }
-    }
-    return match;
-}
-#endif
-
 namespace landmarks {
-
 FactLandmarkGraphTranslatorFactory::FactLandmarkGraphTranslatorFactory(
     const plugins::Options &opts)
     : lm(opts.get<std::shared_ptr<LandmarkFactory>>("lm")) {
@@ -72,23 +56,15 @@ void FactLandmarkGraphTranslatorFactory::add_edges(
     }
 }
 
-void FactLandmarkGraphTranslatorFactory::initialize(
-    const shared_ptr<AbstractTask> &original_task) {
-    /* TODO: might be nicer to initialize the task as constant in the
-        constructor. */
-    assert(!initialized);
-    task = original_task;
-    initialized = true;
-}
-
-shared_ptr<DisjunctiveActionLandmarkGraph>
-FactLandmarkGraphTranslatorFactory::get_landmark_graph(const State &state) {
-    assert(is_initial_state(state));
+shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::get_landmark_graph(
+    const shared_ptr<AbstractTask> &task) {
+    const TaskProxy task_proxy(*task);
+    const State &initial_state = task_proxy.get_initial_state();
     const LandmarkGraph &fact_graph = *lm->compute_lm_graph(task);
     dalm_graph graph = make_shared<DisjunctiveActionLandmarkGraph>();
     const vector<size_t> fact_to_action_lm_map =
-        add_nodes(graph, fact_graph, state);
-    add_edges(graph, fact_graph, state, fact_to_action_lm_map);
+        add_nodes(graph, fact_graph, initial_state);
+    add_edges(graph, fact_graph, initial_state, fact_to_action_lm_map);
 
     utils::g_log << "Landmark graph of initial state contains "
                  << graph->get_number_of_landmarks() << endl;
