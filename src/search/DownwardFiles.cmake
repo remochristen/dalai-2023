@@ -707,7 +707,10 @@ fast_downward_plugin(
     NAME LANDMARKS
     HELP "Plugin containing the code to reason with landmarks"
     SOURCES
+        landmarks/dalm_graph
+        landmarks/dalm_graph_factory
         landmarks/exploration
+        landmarks/fact_landmark_graph_translator_factory
         landmarks/landmark
         landmarks/landmark_cost_assignment
         landmarks/landmark_cost_partitioning_heuristic
