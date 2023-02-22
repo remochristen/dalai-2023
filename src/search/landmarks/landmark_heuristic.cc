@@ -12,28 +12,6 @@
 using namespace std;
 
 namespace landmarks {
-static bool landmark_is_interesting(
-    const State &state, const BitsetView &reached,
-    const landmarks::LandmarkNode &lm_node, bool all_lms_reached) {
-    /*
-      We consider a landmark interesting in two (exclusive) cases:
-      (1) If all landmarks are reached and the landmark must hold in the goal
-          but does not hold in the current state.
-      (2) If it has not been reached before and all its parents are reached.
-    */
-
-    if (all_lms_reached) {
-        const Landmark &landmark = lm_node.get_landmark();
-        return landmark.is_true_in_goal && !landmark.is_true_in_state(state);
-    } else {
-        return !reached.test(lm_node.get_id()) &&
-               all_of(lm_node.parents.begin(), lm_node.parents.end(),
-                      [&](const pair<LandmarkNode *, EdgeType> parent) {
-                          return reached.test(parent.first->get_id());
-                      });
-    }
-}
-
 LandmarkHeuristic::LandmarkHeuristic(
     const plugins::Options &opts)
     : Heuristic(opts),
@@ -92,13 +70,10 @@ void LandmarkHeuristic::compute_landmark_graph(const plugins::Options &opts) {
     }
 }
 
-void LandmarkHeuristic::generate_preferred_operators(
-    const State &state, const BitsetView &reached) {
+void LandmarkHeuristic::generate_preferred_operators( const State &state) {
     /*
-      Find operators that achieve landmark leaves. If a simple landmark can be
-      achieved, prefer only operators that achieve simple landmarks. Otherwise,
-      prefer operators that achieve disjunctive landmarks, or don't prefer any
-      operators if no such landmarks exist at all.
+      Find operators that achieve(simple or disjunctive) landmarks and prefer
+      them.
 
       TODO: Conjunctive landmarks are ignored in *lm_graph->get_node(...)*, so
        they are ignored when computing preferred operators. We consider this
@@ -107,16 +82,7 @@ void LandmarkHeuristic::generate_preferred_operators(
     assert(successor_generator);
     vector<OperatorID> applicable_operators;
     successor_generator->generate_applicable_ops(state, applicable_operators);
-    vector<OperatorID> preferred_operators_simple;
-    vector<OperatorID> preferred_operators_disjunctive;
-
-    bool all_landmarks_reached = true;
-    for (int i = 0; i < reached.size(); ++i) {
-        if (!reached.test(i)) {
-            all_landmarks_reached = false;
-            break;
-        }
-    }
+    vector<OperatorID> preferred_operators;
 
     for (OperatorID op_id : applicable_operators) {
         OperatorProxy op = task_proxy.get_operators()[op_id];
@@ -126,28 +92,28 @@ void LandmarkHeuristic::generate_preferred_operators(
                 continue;
             FactProxy fact_proxy = effect.get_fact();
             LandmarkNode *lm_node = lm_graph->get_node(fact_proxy.get_pair());
-            if (lm_node && landmark_is_interesting(
-                    state, reached, *lm_node, all_landmarks_reached)) {
-                if (lm_node->get_landmark().disjunctive) {
-                    preferred_operators_disjunctive.push_back(op_id);
-                } else {
-                    preferred_operators_simple.push_back(op_id);
-                }
+            if (lm_node && landmark_is_interesting(*lm_node)) {
+                preferred_operators.push_back(op_id);
             }
         }
     }
 
     OperatorsProxy operators = task_proxy.get_operators();
-    if (preferred_operators_simple.empty()) {
-        for (OperatorID op_id : preferred_operators_disjunctive) {
-            set_preferred(operators[op_id]);
-        }
-    } else {
-        for (OperatorID op_id : preferred_operators_simple) {
-            set_preferred(operators[op_id]);
-        }
+    for (const OperatorID op_id : preferred_operators) {
+        set_preferred(operators[op_id]);
     }
 }
+
+bool LandmarkHeuristic::landmark_is_interesting(const LandmarkNode &lm_node) {
+    LandmarkStatus status =
+        lm_status_manager->get_landmark_status(lm_node.get_id());
+    /*
+      We consider a landmark interesting if it is a "future landmark", i.e.,
+      either FUTURE or FUTURE_AND_PAST (which simplifies to the negation of PAST).
+    */
+    return status != PAST;
+}
+
 
 int LandmarkHeuristic::compute_heuristic(const State &ancestor_state) {
     State state = convert_ancestor_state(ancestor_state);
@@ -155,9 +121,7 @@ int LandmarkHeuristic::compute_heuristic(const State &ancestor_state) {
     int h = get_heuristic_value();
 
     if (use_preferred_operators) {
-        BitsetView reached_lms =
-            lm_status_manager->get_past_landmarks(ancestor_state);
-        generate_preferred_operators(state, reached_lms);
+        generate_preferred_operators(state);
     }
 
     return h;
@@ -177,6 +141,7 @@ void LandmarkHeuristic::notify_state_transition(
     }
 }
 
+
 void LandmarkHeuristic::add_options_to_feature(plugins::Feature &feature) {
     feature.add_option<shared_ptr<LandmarkFactory>>(
         "lm_factory",
@@ -188,6 +153,7 @@ void LandmarkHeuristic::add_options_to_feature(plugins::Feature &feature) {
         "identify preferred operators (see OptionCaveats#"
         "Using_preferred_operators_with_landmark_heuristics)",
         "false");
+
     Heuristic::add_options_to_feature(feature);
 
     feature.document_property("preferred operators",

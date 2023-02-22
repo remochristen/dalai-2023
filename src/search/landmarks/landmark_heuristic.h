@@ -21,7 +21,8 @@ protected:
     const bool use_preferred_operators;
 
     std::unique_ptr<LandmarkStatusManager> lm_status_manager;
-    std::unique_ptr<successor_generator::SuccessorGenerator> successor_generator;
+    std::unique_ptr<successor_generator::SuccessorGenerator>
+        successor_generator;
 
     void initialize(const plugins::Options &opts);
     void compute_landmark_graph(const plugins::Options &opts);
@@ -40,8 +41,8 @@ protected:
     */
     virtual int get_heuristic_value() = 0;
 
-    void generate_preferred_operators(
-        const State &state, const BitsetView &reached);
+    void generate_preferred_operators(const State &state);
+    bool landmark_is_interesting(const LandmarkNode &lm_node);
     virtual int compute_heuristic(const State &ancestor_state) override;
 public:
     explicit LandmarkHeuristic(const plugins::Options &opts);
