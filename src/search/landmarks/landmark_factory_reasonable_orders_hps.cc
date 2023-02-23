@@ -13,8 +13,7 @@ using namespace std;
 namespace landmarks {
 LandmarkFactoryReasonableOrdersHPS::LandmarkFactoryReasonableOrdersHPS(const plugins::Options &opts)
     : LandmarkFactory(opts),
-      lm_factory(opts.get<shared_ptr<LandmarkFactory>>("lm_factory")),
-      use_obedient_reasonable(opts.get<bool>("use_obedient_reasonable")) {
+      lm_factory(opts.get<shared_ptr<LandmarkFactory>>("lm_factory")) {
 }
 
 void LandmarkFactoryReasonableOrdersHPS::generate_landmarks(const shared_ptr<AbstractTask> &task) {
@@ -29,18 +28,11 @@ void LandmarkFactoryReasonableOrdersHPS::generate_landmarks(const shared_ptr<Abs
     if (log.is_at_least_normal()) {
         log << "approx. reasonable orders" << endl;
     }
-    approximate_reasonable_orders(task_proxy, false);
-
-    if (use_obedient_reasonable) {
-        if (log.is_at_least_normal()) {
-            log << "approx. obedient reasonable orders" << endl;
-        }
-        approximate_reasonable_orders(task_proxy, true);
-    }
+    approximate_reasonable_orders(task_proxy);
 }
 
 void LandmarkFactoryReasonableOrdersHPS::approximate_reasonable_orders(
-    const TaskProxy &task_proxy, bool obedient_orders) {
+    const TaskProxy &task_proxy) {
     /*
       Approximate reasonable and obedient reasonable orders according
       to Hoffmann et al. If flag "obedient_orders" is true, we
@@ -66,7 +58,7 @@ void LandmarkFactoryReasonableOrdersHPS::approximate_reasonable_orders(
               return;
         */
 
-        if (!obedient_orders && landmark.is_true_in_goal) {
+        if (landmark.is_true_in_goal) {
             for (auto &node2_p : lm_graph->get_nodes()) {
                 const Landmark &landmark2 = node2_p->get_landmark();
                 if (landmark == landmark2 || landmark2.disjunctive
@@ -90,11 +82,11 @@ void LandmarkFactoryReasonableOrdersHPS::approximate_reasonable_orders(
                         const EdgeType &edge = p.second;
                         if (parent_node.get_landmark().disjunctive)
                             continue;
-                        if ((edge >= EdgeType::NATURAL || (obedient_orders && edge == EdgeType::REASONABLE)) &&
-                            &parent_node != node_p.get()) {
+                        if ((edge >= EdgeType::NATURAL)
+                            && &parent_node != node_p.get()) {
                             // find predecessors or parent and collect in "interesting nodes"
                             interesting_nodes.insert(&parent_node);
-                            collect_ancestors(interesting_nodes, parent_node, obedient_orders);
+                            collect_ancestors(interesting_nodes, parent_node);
                         }
                     }
                 }
@@ -108,10 +100,7 @@ void LandmarkFactoryReasonableOrdersHPS::approximate_reasonable_orders(
                         && landmark2.is_true_in_state(initial_state)))
                     continue;
                 if (interferes(task_proxy, landmark2, landmark)) {
-                    if (!obedient_orders)
-                        edge_add(*node2_p, *node_p, EdgeType::REASONABLE);
-                    else
-                        edge_add(*node2_p, *node_p, EdgeType::OBEDIENT_REASONABLE);
+                    edge_add(*node2_p, *node_p, EdgeType::REASONABLE);
                 }
             }
         }
@@ -229,8 +218,7 @@ bool LandmarkFactoryReasonableOrdersHPS::interferes(
 }
 
 void LandmarkFactoryReasonableOrdersHPS::collect_ancestors(
-    unordered_set<LandmarkNode *> &result,
-    LandmarkNode &node, bool use_reasonable) {
+    unordered_set<LandmarkNode *> &result, LandmarkNode &node) {
     /* Returns all ancestors in the landmark graph of landmark node "start" */
 
     // There could be cycles if use_reasonable == true
@@ -239,7 +227,7 @@ void LandmarkFactoryReasonableOrdersHPS::collect_ancestors(
     for (const auto &p : node.parents) {
         LandmarkNode &parent = *(p.first);
         const EdgeType &edge = p.second;
-        if (edge >= EdgeType::NATURAL || (use_reasonable && edge == EdgeType::REASONABLE))
+        if (edge >= EdgeType::NATURAL)
             if (closed_nodes.count(&parent) == 0) {
                 open_nodes.push_back(&parent);
                 closed_nodes.insert(&parent);
@@ -251,7 +239,7 @@ void LandmarkFactoryReasonableOrdersHPS::collect_ancestors(
         for (const auto &p : node2.parents) {
             LandmarkNode &parent = *(p.first);
             const EdgeType &edge = p.second;
-            if (edge >= EdgeType::NATURAL || (use_reasonable && edge == EdgeType::REASONABLE)) {
+            if (edge >= EdgeType::NATURAL) {
                 if (closed_nodes.count(&parent) == 0) {
                     open_nodes.push_back(&parent);
                     closed_nodes.insert(&parent);
@@ -390,8 +378,7 @@ public:
     LandmarkFactoryReasonableOrdersHPSFeature() : TypedFeature("lm_reasonable_orders_hps") {
         document_title("HPS Orders");
         document_synopsis(
-            "Adds reasonable orders and obedient reasonable orders "
-            "described in the following paper" +
+            "Adds reasonable orders described in the following paper" +
             utils::format_journal_reference(
                 {"Jörg Hoffmann", "Julie Porteous", "Laura Sebastia"},
                 "Ordered Landmarks in Planning",
@@ -402,7 +389,6 @@ public:
                 "2004"));
 
         add_option<shared_ptr<LandmarkFactory>>("lm_factory");
-        add_option<bool>("use_obedient_reasonable", "help string", "false");
         add_landmark_factory_options_to_feature(*this);
 
         // TODO: correct?
