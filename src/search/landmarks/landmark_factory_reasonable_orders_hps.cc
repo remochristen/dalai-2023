@@ -69,7 +69,9 @@ void LandmarkFactoryReasonableOrdersHPS::approximate_reasonable_orders(
         if (!obedient_orders && landmark.is_true_in_goal) {
             for (auto &node2_p : lm_graph->get_nodes()) {
                 const Landmark &landmark2 = node2_p->get_landmark();
-                if (landmark == landmark2 || landmark2.disjunctive)
+                if (landmark == landmark2 || landmark2.disjunctive
+                    || (landmark.is_true_in_state(initial_state)
+                        && landmark2.is_true_in_state(initial_state)))
                     continue;
                 if (interferes(task_proxy, landmark2, landmark)) {
                     edge_add(*node2_p, *node_p, EdgeType::REASONABLE);
@@ -101,7 +103,9 @@ void LandmarkFactoryReasonableOrdersHPS::approximate_reasonable_orders(
             // with node_p.
             for (LandmarkNode *node2_p : interesting_nodes) {
                 const Landmark &landmark2 = node2_p->get_landmark();
-                if (landmark == landmark2 || landmark2.disjunctive)
+                if (landmark == landmark2 || landmark2.disjunctive
+                    || (landmark.is_true_in_state(initial_state)
+                        && landmark2.is_true_in_state(initial_state)))
                     continue;
                 if (interferes(task_proxy, landmark2, landmark)) {
                     if (!obedient_orders)
