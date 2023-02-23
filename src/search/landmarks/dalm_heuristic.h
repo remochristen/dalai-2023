@@ -17,6 +17,9 @@ class DisjunctiveActionLandmarkStatusManager;
 
 class DisjunctiveActionLandmarkHeuristic : public Heuristic {
     const bool use_preferred_operators;
+    const bool prog_goal;
+    const bool prog_gn;
+    const bool prog_w;
 
     std::unique_ptr<successor_generator::SuccessorGenerator> successor_generator;
     std::unordered_map<int, std::vector<int>> landmarks_by_operator;

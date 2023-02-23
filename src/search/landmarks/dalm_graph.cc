@@ -96,6 +96,7 @@ void DisjunctiveActionLandmarkGraph::mark_lm_goal_achiever(
 void DisjunctiveActionLandmarkGraph::mark_lm_precondition_achiever(
     const vector<FactPair> &fact_pairs, size_t achiever_lm,
     size_t preconditioned_lm) {
+    assert(!get_actions(achiever_lm).empty());
     auto pair = make_pair(fact_pairs, preconditioned_lm);
     assert(precondition_achiever_lms.count(pair) == 0);
     precondition_achiever_lms[pair] = achiever_lm;

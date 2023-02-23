@@ -20,7 +20,6 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
         const Landmark &fact_lm = node->get_landmark();
 
         bool is_initially_true = fact_lm.is_true_in_state(init_state);
-
         if (!is_initially_true) {
             graph->add_node(fact_lm.first_achievers);
         }
@@ -38,14 +37,19 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
                 break;
             }
         }
-        for (auto &child : node->children) {
-            if (child.second == EdgeType::GREEDY_NECESSARY) {
-                size_t achiever_id =
-                    graph->add_node(fact_lm.possible_achievers);
-                size_t preconditioned_id = graph->add_node(
-                    child.first->get_landmark().first_achievers);
-                graph->mark_lm_precondition_achiever(
-                    fact_lm.facts, achiever_id, preconditioned_id);
+        if (!fact_lm.possible_achievers.empty()) {
+            for (auto &child: node->children) {
+                if (child.second == EdgeType::GREEDY_NECESSARY) {
+                    size_t achiever_id =
+                        graph->add_node(fact_lm.possible_achievers);
+                    if (is_initially_true) {
+                        graph->mark_lm_initially_past(achiever_id);
+                    }
+                    size_t preconditioned_id = graph->add_node(
+                        child.first->get_landmark().first_achievers);
+                    graph->mark_lm_precondition_achiever(
+                        fact_lm.facts, achiever_id, preconditioned_id);
+                }
             }
         }
     }

@@ -42,7 +42,6 @@ void DisjunctiveActionLandmarkSumHeuristic::compute_landmark_costs() {
             min_cost = min(min_cost, op_costs[op_id]);
         }
         min_costs.push_back(min_cost);
-        cout << min_cost << endl;
     }
 }
 
