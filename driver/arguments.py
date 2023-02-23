@@ -447,7 +447,7 @@ def parse_args():
                      "--validate. Do no specify both --debug and --build.")
     if not args.build:
         if args.debug:
-            args.build = "ipc23-debug"
+            args.build = "ipc23_debug"
         else:
             args.build = "ipc23"
 
