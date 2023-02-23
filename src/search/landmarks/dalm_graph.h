@@ -39,6 +39,9 @@ class DisjunctiveActionLandmarkGraph {
     size_t num_weak_orderings = 0;
 
     std::vector<size_t> initially_past_lms;
+    utils::HashMap<const FactPair, size_t> goal_achiever_lms;
+    // TODO: Is a vector the correct choice here? Depends on order.
+    utils::HashMap<std::pair<const std::vector<FactPair>, size_t>, size_t> precondition_achiever_lms;
 
     void dump_lm(int id) const;
 public:
@@ -51,6 +54,11 @@ public:
     const std::vector<size_t> get_initially_past_lms() const {
         return initially_past_lms;
     }
+    void mark_lm_goal_achiever(const FactPair &fact_pair, size_t lm);
+    void mark_lm_precondition_achiever (
+        const std::vector<FactPair> &fact_pairs, size_t achiever_lm,
+        size_t preconditioned_lm);
+
     int get_id(const std::set<int> &actions);
 
     bool landmarks_overlap(size_t lm1, size_t lm2);

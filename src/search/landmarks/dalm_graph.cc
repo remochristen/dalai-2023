@@ -87,6 +87,20 @@ void DisjunctiveActionLandmarkGraph::mark_lm_initially_past(size_t id) {
     initially_past_lms.push_back(id);
 }
 
+void DisjunctiveActionLandmarkGraph::mark_lm_goal_achiever(
+    const FactPair &fact_pair, size_t lm) {
+    assert(goal_achiever_lms.count(fact_pair) == 0);
+    goal_achiever_lms[fact_pair] = lm;
+}
+
+void DisjunctiveActionLandmarkGraph::mark_lm_precondition_achiever(
+    const vector<FactPair> &fact_pairs, size_t achiever_lm,
+    size_t preconditioned_lm) {
+    auto pair = make_pair(fact_pairs, preconditioned_lm);
+    assert(precondition_achiever_lms.count(pair) == 0);
+    precondition_achiever_lms[pair] = achiever_lm;
+}
+
 int DisjunctiveActionLandmarkGraph::get_id(const set<int> &actions) {
     if (ids.count(actions)) {
         return static_cast<int>(ids[actions]);
