@@ -38,12 +38,20 @@ class DisjunctiveActionLandmarkGraph {
     size_t num_strong_orderings = 0;
     size_t num_weak_orderings = 0;
 
+    std::vector<size_t> initially_past_lms;
+
     void dump_lm(int id) const;
 public:
     explicit DisjunctiveActionLandmarkGraph() = default;
 
     size_t add_node(const std::set<int> &actions);
     void add_edge(size_t from, size_t to, bool strong);
+
+    void mark_lm_initially_past(size_t id);
+    const std::vector<size_t> get_initially_past_lms() const {
+        return initially_past_lms;
+    }
+    int get_id(const std::set<int> &actions);
 
     bool landmarks_overlap(size_t lm1, size_t lm2);
 

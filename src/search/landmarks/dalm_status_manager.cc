@@ -32,6 +32,10 @@ void DisjunctiveActionLandmarkStatusManager::process_initial_state(
     const State &initial_state, utils::LogProxy &/*log*/) {
     past_lms[initial_state].reset();
     future_lms[initial_state].set();
+    for (size_t id : lm_graph.get_initially_past_lms()) {
+        past_lms[initial_state].set(id);
+        future_lms[initial_state].reset(id);
+    }
 }
 
 void DisjunctiveActionLandmarkStatusManager::process_state_transition(

@@ -83,6 +83,19 @@ void DisjunctiveActionLandmarkGraph::add_edge(
     }
 }
 
+void DisjunctiveActionLandmarkGraph::mark_lm_initially_past(size_t id) {
+    initially_past_lms.push_back(id);
+}
+
+int DisjunctiveActionLandmarkGraph::get_id(const set<int> &actions) {
+    if (ids.count(actions)) {
+        return static_cast<int>(ids[actions]);
+    } else {
+        // No corresponding landmark exists in this graph.
+        return -1;
+    }
+}
+
 bool DisjunctiveActionLandmarkGraph::landmarks_overlap(size_t lm1, size_t lm2) {
     return lm1 == lm2 || lms[lm1].overlaps_with(lms[lm2]);
 }
