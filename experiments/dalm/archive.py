@@ -25,8 +25,8 @@ def add_archive_step(exp, path):
     def archive():
         archive_path = ARCHIVE_LOCATION / path
         _archive_script_dir(exp, ARCHIVE_HOST, archive_path)
-        _archive_data_dir(exp, ARCHIVE_HOST, archive_path)
         _archive_eval_dir(exp, ARCHIVE_HOST, archive_path)
+        _archive_data_dir(exp, ARCHIVE_HOST, archive_path)
 
     exp.add_step("archive", archive)
 
