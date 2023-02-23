@@ -38,7 +38,7 @@ void DisjunctiveActionLandmarkHeuristic::initialize(const plugins::Options &opts
     // TODO: adapt boolean parameters.
     lm_status_manager =
         utils::make_unique_ptr<DisjunctiveActionLandmarkStatusManager>(
-            *lm_graph, true, true);
+            *lm_graph, true, true, true);
 
     if (use_preferred_operators) {
         /* Ideally, we should reuse the successor generator of the main

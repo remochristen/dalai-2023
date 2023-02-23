@@ -11,9 +11,11 @@ namespace landmarks {
 */
 DisjunctiveActionLandmarkStatusManager::DisjunctiveActionLandmarkStatusManager(
     DisjunctiveActionLandmarkGraph &graph,
+    bool progress_goals,
     bool progress_greedy_necessary_orderings,
     bool progress_reasonable_orderings)
     : lm_graph(graph),
+      progress_goals(progress_goals),
       progress_greedy_necessary_orderings(progress_greedy_necessary_orderings),
       progress_reasonable_orderings(progress_reasonable_orderings),
       past_lms(vector<bool>(graph.get_number_of_landmarks(), true)),
@@ -56,13 +58,14 @@ void DisjunctiveActionLandmarkStatusManager::process_state_transition(
 
     progress_basic(parent_past, parent_fut, past, fut, op_id.get_index());
 
-    for (int id = 0; id < num_landmarks; ++id) {
-        if (progress_greedy_necessary_orderings) {
-            progress_greedy_necessary(id, ancestor_state, past, fut);
-        }
-        if (progress_reasonable_orderings) {
-            progress_reasonable(id, past, fut);
-        }
+    if (progress_goals) {
+        progress_goal(ancestor_state, fut);
+    }
+    if (progress_greedy_necessary_orderings) {
+        progress_greedy_necessary(ancestor_state, past, fut);
+    }
+    if (progress_reasonable_orderings) {
+        progress_reasonable(past, fut);
     }
 }
 
@@ -86,30 +89,36 @@ void DisjunctiveActionLandmarkStatusManager::progress_basic(
     }
 }
 
+void DisjunctiveActionLandmarkStatusManager::progress_goal(
+    const State &ancestor_state, BitsetView &fut) {
+    for (const auto &entry : lm_graph.get_goal_achiever_lms()) {
+        const FactPair &fact_pair = entry.first;
+        int lm_id = static_cast<int>(entry.second);
+        // TODO: Does this check make sense?
+        if (ancestor_state[fact_pair.var].get_value() != fact_pair.value) {
+            fut.set(lm_id);
+        }
+    }
+}
+
 void DisjunctiveActionLandmarkStatusManager::progress_greedy_necessary(
-    int /*id*/, const State &/*ancestor_state*/, const BitsetView &/*past*/,
-    BitsetView &/*fut*/) {
-    /* TODO: decide how to deal with greedy-necessary orderings.
-
-    if (past.test(id)) {
-        return;
-    }
-
-    for (auto &parent : lm_graph.get_node(id)->parents) {
-        if (parent.second != EdgeType::GREEDY_NECESSARY
-            || fut.test(parent.first->get_id())) {
-            continue;
-        }
-        if (!parent.first->get_landmark().is_true_in_state(ancestor_state)) {
-            ++gn_progression_counter;
-            fut.set(parent.first->get_id());
+    const State &ancestor_state, const BitsetView &past, BitsetView &fut) {
+    for (const auto &entry : lm_graph.get_precondition_achiever_lms()) {
+        const vector<FactPair> &fact_pairs = entry.first.first;
+        int preconditioned_id = static_cast<int>(entry.first.second);
+        int achiever_id = static_cast<int>(entry.second);
+        if (!past.test(preconditioned_id)
+            && none_of(fact_pairs.begin(), fact_pairs.end(),
+                      [ancestor_state](const FactPair &fact_pair) {
+            return ancestor_state[fact_pair.var].get_value() == fact_pair.value;
+        })) {
+            fut.set(achiever_id);
         }
     }
-    */
 }
 
 void DisjunctiveActionLandmarkStatusManager::progress_reasonable(
-    int /*id*/, const BitsetView &/*past*/, BitsetView &/*fut*/) {
+    const BitsetView &/*past*/, BitsetView &/*fut*/) {
     /* TODO: decide how to deal with reasonable orderings.
 
     if (past.test(id)) {

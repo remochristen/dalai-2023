@@ -13,6 +13,7 @@ enum LandmarkStatus {PAST = 0, FUTURE = 1, PAST_AND_FUTURE = 2};
 
 class DisjunctiveActionLandmarkStatusManager {
     DisjunctiveActionLandmarkGraph &lm_graph;
+    const bool progress_goals;
     const bool progress_greedy_necessary_orderings;
     const bool progress_reasonable_orderings;
 
@@ -22,15 +23,17 @@ class DisjunctiveActionLandmarkStatusManager {
     void progress_basic(
         const BitsetView &parent_past, const BitsetView &parent_fut,
         BitsetView &past, BitsetView &fut, int op_id);
-    void progress_greedy_necessary(int id, const State &ancestor_state,
+    void progress_goal(const State &ancestor_state, BitsetView &fut);
+    void progress_greedy_necessary(const State &ancestor_state,
                                    const BitsetView &past, BitsetView &fut);
-    void progress_reasonable(int id, const BitsetView &past, BitsetView &fut);
+    void progress_reasonable(const BitsetView &past, BitsetView &fut);
 public:
     //int gn_progression_counter = 0;
     //int reasonable_progression_counter = 0;
 
     explicit DisjunctiveActionLandmarkStatusManager(
         DisjunctiveActionLandmarkGraph &graph,
+        bool progress_goals,
         bool progress_greedy_necessary_orderings,
         bool progress_reasonable_orderings);
 

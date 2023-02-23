@@ -51,13 +51,20 @@ public:
     void add_edge(size_t from, size_t to, bool strong);
 
     void mark_lm_initially_past(size_t id);
-    const std::vector<size_t> get_initially_past_lms() const {
+    const std::vector<size_t> &get_initially_past_lms() const {
         return initially_past_lms;
     }
     void mark_lm_goal_achiever(const FactPair &fact_pair, size_t lm);
     void mark_lm_precondition_achiever (
         const std::vector<FactPair> &fact_pairs, size_t achiever_lm,
         size_t preconditioned_lm);
+
+    const utils::HashMap<const FactPair, size_t> &get_goal_achiever_lms() const {
+        return goal_achiever_lms;
+    }
+    const utils::HashMap<std::pair<const std::vector<FactPair>, size_t>, size_t> &get_precondition_achiever_lms() const {
+        return precondition_achiever_lms;
+    }
 
     int get_id(const std::set<int> &actions);
 
