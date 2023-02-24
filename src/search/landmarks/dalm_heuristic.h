@@ -49,6 +49,10 @@ protected:
     virtual int compute_heuristic(const State &ancestor_state) override;
 
     void precompute_landmarks_by_operator_lookup();
+
+    const std::vector<int> &get_landmark_ids_for_operator(int op_id) {
+        return landmarks_by_operator[op_id];
+    }
 public:
     explicit DisjunctiveActionLandmarkHeuristic(const plugins::Options &opts);
 
