@@ -9,15 +9,32 @@
 using namespace std;
 
 namespace landmarks {
+static void remove_derived_landmarks(LandmarkGraph &lm_graph) {
+    // THIS IS SUPER HACKY!!!
+    int removed_lms = 0;
+    int num_landmarks = lm_graph.get_num_landmarks();
+    for (int id = 0; id < num_landmarks; ++id) {
+        if (lm_graph.get_node(id - removed_lms)->get_landmark().is_derived) {
+            lm_graph.remove_node(lm_graph.get_node(id - removed_lms));
+            ++removed_lms;
+        }
+    }
+    utils::g_log << "Removed " << removed_lms << " derived variables." << endl;
+    lm_graph.set_landmark_ids();
+}
+
 FactLandmarkGraphTranslatorFactory::FactLandmarkGraphTranslatorFactory(
     const plugins::Options &opts)
-    : lm(opts.get<std::shared_ptr<LandmarkFactory>>("lm")) {
+    : lm(opts.get<shared_ptr<LandmarkFactory>>("lm")) {
 }
 
 void FactLandmarkGraphTranslatorFactory::add_nodes(
     dalm_graph &graph, const LandmarkGraph &lm_graph, const State &init_state) {
     for (const unique_ptr<LandmarkNode> &node : lm_graph.get_nodes()) {
         const Landmark &fact_lm = node->get_landmark();
+        if (fact_lm.is_derived) {
+            continue;
+        }
 
         bool is_initially_true = fact_lm.is_true_in_state(init_state);
         if (!is_initially_true) {
@@ -40,13 +57,17 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
         if (!fact_lm.possible_achievers.empty()) {
             for (auto &child: node->children) {
                 if (child.second == EdgeType::GREEDY_NECESSARY) {
+                    Landmark &child_fact_lm = child.first->get_landmark();
+                    if (child_fact_lm.is_derived) {
+                        continue;
+                    }
                     size_t achiever_id =
                         graph->add_node(fact_lm.possible_achievers);
                     if (is_initially_true) {
                         graph->mark_lm_initially_past(achiever_id);
                     }
-                    size_t preconditioned_id = graph->add_node(
-                        child.first->get_landmark().first_achievers);
+                    size_t preconditioned_id =
+                        graph->add_node(child_fact_lm.first_achievers);
                     graph->mark_lm_precondition_achiever(
                         fact_lm.facts, achiever_id, preconditioned_id);
                 }
@@ -93,7 +114,8 @@ shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::c
     const shared_ptr<AbstractTask> &task) {
     const TaskProxy task_proxy(*task);
     const State &initial_state = task_proxy.get_initial_state();
-    const LandmarkGraph &fact_graph = *lm->compute_lm_graph(task);
+    LandmarkGraph &fact_graph = *lm->compute_lm_graph(task);
+    remove_derived_landmarks(fact_graph);
     dalm_graph graph = make_shared<DisjunctiveActionLandmarkGraph>();
     add_nodes(graph, fact_graph, initial_state);
     add_edges(graph, fact_graph, initial_state);
