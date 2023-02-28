@@ -42,7 +42,7 @@ CONFIGS = [
         build_options=[build],
         driver_options=[
             "--search-time-limit", "30m",
-            "--overall-memory-limit", "7600M",
+            # "--overall-memory-limit", "7600M",
             "--build", build])
     for build in BUILDS
     for config_nick, config in CONFIG_NICKS
@@ -51,7 +51,7 @@ CONFIGS = [
 SUITE = common_setup.DEFAULT_SATISFICING_SUITE
 ENVIRONMENT = BaselSlurmEnvironment(
     partition="infai_1",
-    memory_per_cpu="7744M",
+    # memory_per_cpu="7744M",
     email="clemens.buechner@unibas.ch",
     setup="export PATH=/scicore/soft/apps/Python/3.10.4-GCCcore-11.3.0/bin:/scicore/soft/apps/SQLite/3.38.3-GCCcore-11.3.0/bin:/scicore/soft/apps/Tcl/8.6.12-GCCcore-11.3.0/bin:/scicore/soft/apps/CMake/3.23.1-GCCcore-11.3.0/bin:/scicore/soft/apps/libarchive/3.6.1-GCCcore-11.3.0/bin:/scicore/soft/apps/XZ/5.2.5-GCCcore-11.3.0/bin:/scicore/soft/apps/cURL/7.83.0-GCCcore-11.3.0/bin:/scicore/soft/apps/OpenSSL/1.1/bin:/scicore/soft/apps/bzip2/1.0.8-GCCcore-11.3.0/bin:/scicore/soft/apps/ncurses/6.3-GCCcore-11.3.0/bin:/scicore/soft/apps/binutils/2.38-GCCcore-11.3.0/bin:/scicore/soft/apps/GCCcore/11.3.0/bin:/export/soft/lua_lmod/centos7/lmod/lmod/libexec:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/infai/buecle01/bin:/infai/buecle01/bin"
 )
