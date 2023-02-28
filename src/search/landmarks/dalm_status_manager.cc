@@ -110,15 +110,12 @@ void DisjunctiveActionLandmarkStatusManager::progress_goal(
 void DisjunctiveActionLandmarkStatusManager::progress_greedy_necessary(
     const State &ancestor_state, const BitsetView &past, BitsetView &fut) {
     for (const auto &entry : lm_graph.get_precondition_achiever_lms()) {
-        const vector<FactPair> &fact_pairs = entry.first.first;
-        int preconditioned_id = static_cast<int>(entry.first.second);
-        int achiever_id = static_cast<int>(entry.second);
-        if (!past.test(preconditioned_id)
-            && none_of(fact_pairs.begin(), fact_pairs.end(),
+        if (!past.test(static_cast<int>(entry.preconditioned_lm))
+            && none_of(entry.facts.begin(), entry.facts.end(),
                        [ancestor_state](const FactPair &fact_pair) {
             return ancestor_state[fact_pair.var].get_value() == fact_pair.value;
         })) {
-            fut.set(achiever_id);
+            fut.set(static_cast<int>(entry.achiever_lm));
         }
     }
 }
