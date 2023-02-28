@@ -38,7 +38,6 @@ void DisjunctiveActionLandmarkHeuristic::initialize(const plugins::Options &opts
     compute_landmark_graph(opts);
     precompute_landmarks_by_operator_lookup();
 
-    // TODO: adapt boolean parameters.
     lm_status_manager =
         utils::make_unique_ptr<DisjunctiveActionLandmarkStatusManager>(
             *lm_graph, prog_goal, prog_gn, prog_w);

@@ -119,6 +119,10 @@ shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::c
     dalm_graph graph = make_shared<DisjunctiveActionLandmarkGraph>();
     add_nodes(graph, fact_graph, initial_state);
     add_edges(graph, fact_graph, initial_state);
+    if (graph->get_number_of_landmarks() == 0) {
+        size_t id = graph->add_node({});
+        graph->mark_lm_initially_past(id);
+    }
 
     utils::g_log << "Landmark graph of initial state contains "
                  << graph->get_number_of_landmarks() << endl;
@@ -129,7 +133,7 @@ shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::c
                  << " are strong and "
                  << graph->get_number_of_weak_orderings()
                  << " are weak." << endl;
-    graph->dump_dot();
+    //graph->dump_dot();
     return graph;
 }
 

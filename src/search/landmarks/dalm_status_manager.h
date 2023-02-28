@@ -28,9 +28,6 @@ class DisjunctiveActionLandmarkStatusManager {
                                    const BitsetView &past, BitsetView &fut);
     void progress_weak(const BitsetView &past, BitsetView &fut);
 public:
-    //int gn_progression_counter = 0;
-    //int reasonable_progression_counter = 0;
-
     explicit DisjunctiveActionLandmarkStatusManager(
         DisjunctiveActionLandmarkGraph &graph,
         bool progress_goals,
