@@ -29,8 +29,6 @@ void DisjunctiveActionLandmarkSumHeuristic::compute_landmark_costs() {
       at index i corresponds to the entry for the landmark node with ID i.
     */
 
-    // TODO: How do we translate derived variables to DALMs?
-
     const vector<int> &op_costs =
         task_properties::get_operator_costs(task_proxy);
 

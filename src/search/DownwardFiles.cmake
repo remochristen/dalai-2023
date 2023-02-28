@@ -715,6 +715,7 @@ fast_downward_plugin(
         landmarks/dalm_sum_heuristic
         landmarks/exploration
         landmarks/fact_landmark_graph_translator_factory
+        landmarks/fact_landmark_graph_translator_factory_possible
         landmarks/landmark
         landmarks/landmark_cost_assignment
         landmarks/landmark_cost_partitioning_heuristic

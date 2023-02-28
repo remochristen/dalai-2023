@@ -1,4 +1,4 @@
-#include "fact_landmark_graph_translator_factory.h"
+#include "fact_landmark_graph_translator_factory_possible.h"
 
 #include "landmark_factory.h"
 
@@ -23,12 +23,12 @@ static void remove_derived_landmarks(LandmarkGraph &lm_graph) {
     lm_graph.set_landmark_ids();
 }
 
-FactLandmarkGraphTranslatorFactory::FactLandmarkGraphTranslatorFactory(
+FactLandmarkGraphTranslatorFactoryPossible::FactLandmarkGraphTranslatorFactoryPossible(
     const plugins::Options &opts)
     : lm(opts.get<shared_ptr<LandmarkFactory>>("lm")) {
 }
 
-void FactLandmarkGraphTranslatorFactory::add_nodes(
+void FactLandmarkGraphTranslatorFactoryPossible::add_nodes(
     dalm_graph &graph, const LandmarkGraph &lm_graph, const State &init_state) {
     for (const unique_ptr<LandmarkNode> &node : lm_graph.get_nodes()) {
         const Landmark &fact_lm = node->get_landmark();
@@ -38,7 +38,7 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
 
         bool is_initially_true = fact_lm.is_true_in_state(init_state);
         if (!is_initially_true) {
-            graph->add_node(fact_lm.first_achievers);
+            graph->add_node(fact_lm.possible_achievers);
         }
         if (fact_lm.is_true_in_goal) {
             size_t lm_id = graph->add_node(fact_lm.possible_achievers);
@@ -67,7 +67,7 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
                         graph->mark_lm_initially_past(achiever_id);
                     }
                     size_t preconditioned_id =
-                        graph->add_node(child_fact_lm.first_achievers);
+                        graph->add_node(child_fact_lm.possible_achievers);
                     graph->mark_lm_precondition_achiever(
                         fact_lm.facts, achiever_id, preconditioned_id);
                 }
@@ -76,7 +76,7 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
     }
 }
 
-void FactLandmarkGraphTranslatorFactory::add_edges(
+void FactLandmarkGraphTranslatorFactoryPossible::add_edges(
     dalm_graph &graph, const LandmarkGraph &lm_graph, const State &init_state) {
     for (auto &node: lm_graph.get_nodes()) {
         Landmark &fact_lm = node->get_landmark();
@@ -86,13 +86,11 @@ void FactLandmarkGraphTranslatorFactory::add_edges(
                are already resolved initially. */
             continue;
         }
-        int from_id = graph->get_id(fact_lm.first_achievers);
+        int from_id = graph->get_id(fact_lm.possible_achievers);
         assert(from_id >= 0);
         for (auto &child : node->children) {
             Landmark &child_fact_lm = child.first->get_landmark();
-            int to_id = graph->get_id(child.second >= EdgeType::NATURAL
-                                      ? child_fact_lm.first_achievers
-                                      : child_fact_lm.possible_achievers);
+            int to_id = graph->get_id(child_fact_lm.possible_achievers);
             assert(to_id >= 0);
             /*
               If there is an action which occurs in both landmarks, applying it
@@ -110,7 +108,7 @@ void FactLandmarkGraphTranslatorFactory::add_edges(
     }
 }
 
-shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::compute_landmark_graph(
+shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactoryPossible::compute_landmark_graph(
     const shared_ptr<AbstractTask> &task) {
     const TaskProxy task_proxy(*task);
     const State &initial_state = task_proxy.get_initial_state();
@@ -137,11 +135,11 @@ shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::c
     return graph;
 }
 
-class FactLandmarkGraphTranslatorFactoryFeature
-    : public plugins::TypedFeature<LandmarkGraphFactory, FactLandmarkGraphTranslatorFactory> {
+class FactLandmarkGraphTranslatorFactoryPossibleFeature
+    : public plugins::TypedFeature<LandmarkGraphFactory, FactLandmarkGraphTranslatorFactoryPossible> {
 public:
-    FactLandmarkGraphTranslatorFactoryFeature()
-        : TypedFeature("fact_translator") {
+    FactLandmarkGraphTranslatorFactoryPossibleFeature()
+        : TypedFeature("fact_translator_possible") {
         document_title("TODO");
         document_synopsis(
             "Fact to Disjunctive Action Landmark Graph Translator");
@@ -150,5 +148,5 @@ public:
     }
 };
 
-static plugins::FeaturePlugin<FactLandmarkGraphTranslatorFactoryFeature> _plugin;
+static plugins::FeaturePlugin<FactLandmarkGraphTranslatorFactoryPossibleFeature> _plugin;
 }
