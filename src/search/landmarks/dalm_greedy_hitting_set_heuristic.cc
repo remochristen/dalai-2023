@@ -24,33 +24,69 @@ namespace landmarks {
 
     int DisjunctiveActionLandmarkGreedyHittingSetHeuristic::get_heuristic_value(
             const State &ancestor_state) {
-
+        int max_hits = 0;
         for (int id = 0; id < (int)landmark_active.size(); ++id) {
             if (lm_status_manager->get_landmark_status(
                     ancestor_state, id) != PAST) {
                 landmark_active[id] = true;
                 for (int op_id : lm_graph->get_actions(id)) {
                     op_hits[op_id]++;
+                    if (op_hits[op_id] > max_hits) {
+                        max_hits = op_hits[op_id];
+                    }
                 }
             } else {
                 landmark_active[id] = false;
+            }
+        }
+        if (max_hits == 0) {
+            return 0;
+        }
+
+        vector<vector<int>> hits_to_op(max_hits);
+        for (vector<int> &elem : hits_to_op) {
+            elem.reserve(op_hits.size());
+        }
+        for (size_t op_id = 0; op_id < op_hits.size(); ++op_id) {
+            if (op_hits[op_id] != 0) {
+                hits_to_op[op_hits[op_id]-1].push_back(op_id);
             }
         }
 
         int h = 0;
         while (true) {
             // Find op that hits max number of landmarks
-            int chosen_op_id = 0;
+            int chosen_op_id = -1;
+            while (chosen_op_id  == -1) {
+                int op_id = hits_to_op.back().back();
+                int num_hits = op_hits[op_id];
+                if (num_hits == (int) hits_to_op.size()) {
+                    chosen_op_id = op_id;
+                } else {
+                    if (hits_to_op.back().size() == 1) {
+                        if (hits_to_op.size() == 1) {
+                            return h;
+                        }
+                        hits_to_op.pop_back();
+                    } else {
+                        hits_to_op.back().pop_back();
+                    }
+                    if (num_hits != 0) {
+                        hits_to_op[num_hits-1].push_back(op_id);
+                    }
+                }
+            }
+            /*int chosen_op_id = 0;
             for (size_t i = 1; i < op_hits.size(); ++i) {
                 if (op_hits[i] > op_hits[chosen_op_id]) {
                     chosen_op_id = i;
                 }
-            }
+            }*/
 
             // No operator hits an active landmark -> we're done
-            if (op_hits[chosen_op_id] == 0) {
+            /*if (op_hits[chosen_op_id] == 0) {
                 return h;
-            }
+            }*/
 
             h += task_proxy.get_operators()[chosen_op_id].get_cost();
             // Update active landmarks and operator hits
@@ -59,8 +95,8 @@ namespace landmarks {
                     for (int op_id : lm_graph->get_actions(lm_id)) {
                         op_hits[op_id]--;
                     }
+                    landmark_active[lm_id] = false;
                 }
-                landmark_active[lm_id] = false;
             }
         }
 
