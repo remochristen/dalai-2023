@@ -58,6 +58,10 @@ namespace landmarks {
             // Find op that hits max number of landmarks
             int chosen_op_id = -1;
             while (chosen_op_id  == -1) {
+                if (hits_to_op.back().empty()) {
+                    hits_to_op.pop_back();
+                    continue;
+                }
                 int op_id = hits_to_op.back().back();
                 int num_hits = op_hits[op_id];
                 if (num_hits == (int) hits_to_op.size()) {
@@ -76,17 +80,6 @@ namespace landmarks {
                     }
                 }
             }
-            /*int chosen_op_id = 0;
-            for (size_t i = 1; i < op_hits.size(); ++i) {
-                if (op_hits[i] > op_hits[chosen_op_id]) {
-                    chosen_op_id = i;
-                }
-            }*/
-
-            // No operator hits an active landmark -> we're done
-            /*if (op_hits[chosen_op_id] == 0) {
-                return h;
-            }*/
 
             h += task_proxy.get_operators()[chosen_op_id].get_cost();
             // Update active landmarks and operator hits
