@@ -32,6 +32,21 @@ public:
     bool depends_on(int id) const;
 };
 
+struct precondition_achiever_triple {
+    // TODO: Is a vector the correct choice for this? Depends on order.
+    const std::vector<FactPair> facts;
+    const size_t achiever_lm;
+    const size_t preconditioned_lm;
+
+    precondition_achiever_triple(
+        const std::vector<FactPair> &facts,
+        size_t achiever_lm, size_t preconditioned_lm)
+        : facts(facts),
+          achiever_lm(achiever_lm),
+          preconditioned_lm(preconditioned_lm) {
+    };
+};
+
 class DisjunctiveActionLandmarkGraph {
     std::map<std::set<int>, size_t> ids;
     std::vector<DisjunctiveActionLandmarkNode> lms;
@@ -39,9 +54,8 @@ class DisjunctiveActionLandmarkGraph {
     size_t num_weak_orderings = 0;
 
     std::vector<size_t> initially_past_lms;
-    utils::HashMap<const FactPair, size_t> goal_achiever_lms;
-    // TODO: Is a vector the correct choice here? Depends on order.
-    utils::HashMap<std::pair<const std::vector<FactPair>, size_t>, size_t> precondition_achiever_lms;
+    std::vector<std::pair<FactPair, size_t>> goal_achiever_lms;
+    std::vector<precondition_achiever_triple> precondition_achiever_lms;
 
     void dump_lm(int id) const;
 public:
@@ -59,10 +73,10 @@ public:
         const std::vector<FactPair> &fact_pairs, size_t achiever_lm,
         size_t preconditioned_lm);
 
-    const utils::HashMap<const FactPair, size_t> &get_goal_achiever_lms() const {
+    const std::vector<std::pair<FactPair, size_t>> &get_goal_achiever_lms() const {
         return goal_achiever_lms;
     }
-    const utils::HashMap<std::pair<const std::vector<FactPair>, size_t>, size_t> &get_precondition_achiever_lms() const {
+    const std::vector<precondition_achiever_triple> &get_precondition_achiever_lms() const {
         return precondition_achiever_lms;
     }
 
