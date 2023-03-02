@@ -177,4 +177,35 @@ void LandmarkGraph::set_landmark_ids() {
         ++id;
     }
 }
+
+void LandmarkGraph::dump_dot() const {
+    cout << "digraph graphname {\n";
+    for (size_t id = 0; id < nodes.size(); ++id) {
+        const LandmarkNode *lmn = nodes[id].get();
+        cout << "  lm" << id << " [label=\"<";
+        for (const FactPair &fact: lmn->get_landmark().facts) {
+            cout << fact.var << "=" << fact.value << " ";
+        }
+        cout << "-- fa: ";
+        for (int op_id: lmn->get_landmark().first_achievers) {
+            cout << op_id << " ";
+        }
+        cout << "-- pa: ";
+        for (int op_id: lmn->get_landmark().possible_achievers) {
+            cout << op_id << " ";
+        }
+        cout << ">\"];\n";
+    }
+    cout << "\n";
+    for (size_t id = 0; id < nodes.size(); ++id) {
+        for (pair<LandmarkNode *, EdgeType> elem: nodes[id].get()->children) {
+            cout << " lm" << id << " -> lm" << elem.first->get_id();
+            if (elem.second < EdgeType::NATURAL) {
+                cout << " [style=dotted]";
+            }
+            cout << ";\n";
+        }
+    }
+    cout << "}" << endl;
+}
 }

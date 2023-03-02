@@ -50,27 +50,28 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
         }
         for (auto &parent : node->parents) {
             if (parent.second == EdgeType::REASONABLE) {
-                graph->add_node(fact_lm.possible_achievers);
+                size_t lm_id = graph->add_node(fact_lm.possible_achievers);
+                if (is_initially_true) {
+                    graph->mark_lm_initially_past(lm_id);
+                }
                 break;
             }
         }
-        if (!fact_lm.possible_achievers.empty()) {
-            for (auto &child: node->children) {
-                if (child.second == EdgeType::GREEDY_NECESSARY) {
-                    Landmark &child_fact_lm = child.first->get_landmark();
-                    if (child_fact_lm.is_derived) {
-                        continue;
-                    }
-                    size_t achiever_id =
-                        graph->add_node(fact_lm.possible_achievers);
-                    if (is_initially_true) {
-                        graph->mark_lm_initially_past(achiever_id);
-                    }
-                    size_t preconditioned_id =
-                        graph->add_node(child_fact_lm.first_achievers);
-                    graph->mark_lm_precondition_achiever(
-                        fact_lm.facts, achiever_id, preconditioned_id);
+        for (auto &child: node->children) {
+            if (child.second == EdgeType::GREEDY_NECESSARY) {
+                Landmark &child_fact_lm = child.first->get_landmark();
+                if (child_fact_lm.is_derived) {
+                    continue;
                 }
+                size_t achiever_id =
+                    graph->add_node(fact_lm.possible_achievers);
+                if (is_initially_true) {
+                    graph->mark_lm_initially_past(achiever_id);
+                }
+                size_t preconditioned_id =
+                    graph->add_node(child_fact_lm.first_achievers);
+                graph->mark_lm_precondition_achiever(
+                    fact_lm.facts, achiever_id, preconditioned_id);
             }
         }
     }
@@ -80,14 +81,20 @@ void FactLandmarkGraphTranslatorFactory::add_edges(
     dalm_graph &graph, const LandmarkGraph &lm_graph, const State &init_state) {
     for (auto &node: lm_graph.get_nodes()) {
         Landmark &fact_lm = node->get_landmark();
+        int from_id = -1;
         if (fact_lm.is_true_in_state(init_state)) {
-            /* All edges starting in initially true facts are not
-               interesting for us since the cycles they possibly induce
-               are already resolved initially. */
+            from_id = graph->get_id(fact_lm.possible_achievers);
+        } else {
+            from_id = graph->get_id(fact_lm.first_achievers);
+            assert(from_id >= 0);
+        }
+        /*
+         * We do not add landmarks if they are true in the initial state
+         * and don't have orderings that can make them future again.
+         */
+        if (from_id == -1) {
             continue;
         }
-        int from_id = graph->get_id(fact_lm.first_achievers);
-        assert(from_id >= 0);
         for (auto &child : node->children) {
             Landmark &child_fact_lm = child.first->get_landmark();
             int to_id = graph->get_id(child.second >= EdgeType::NATURAL
