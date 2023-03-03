@@ -51,6 +51,9 @@ int DisjunctiveActionLandmarkSumHeuristic::get_heuristic_value(
     for (int id = 0; id < num_landmarks; ++id) {
         if (lm_status_manager->get_landmark_status(
             ancestor_state, id) != PAST) {
+            if (min_costs[id] == numeric_limits<int>::max()) {
+                return DEAD_END;
+            }
             h += min_costs[id];
         }
     }

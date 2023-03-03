@@ -38,39 +38,31 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
 
         bool is_initially_true = fact_lm.is_true_in_state(init_state);
         if (!is_initially_true) {
-            graph->add_node(fact_lm.first_achievers);
+            graph->add_node(fact_lm.first_achievers, is_initially_true);
         }
         if (fact_lm.is_true_in_goal) {
-            size_t lm_id = graph->add_node(fact_lm.possible_achievers);
+            size_t lm_id = graph->add_node(fact_lm.possible_achievers, is_initially_true);
             assert(fact_lm.facts.size() == 1);
             graph->mark_lm_goal_achiever(fact_lm.facts[0], lm_id);
-            if (is_initially_true) {
-                graph->mark_lm_initially_past(lm_id);
-            }
         }
         for (auto &parent : node->parents) {
             if (parent.second == EdgeType::REASONABLE) {
-                graph->add_node(fact_lm.possible_achievers);
+                graph->add_node(fact_lm.possible_achievers, is_initially_true);
                 break;
             }
         }
-        if (!fact_lm.possible_achievers.empty()) {
-            for (auto &child: node->children) {
-                if (child.second == EdgeType::GREEDY_NECESSARY) {
-                    Landmark &child_fact_lm = child.first->get_landmark();
-                    if (child_fact_lm.is_derived) {
-                        continue;
-                    }
-                    size_t achiever_id =
-                        graph->add_node(fact_lm.possible_achievers);
-                    if (is_initially_true) {
-                        graph->mark_lm_initially_past(achiever_id);
-                    }
-                    size_t preconditioned_id =
-                        graph->add_node(child_fact_lm.first_achievers);
-                    graph->mark_lm_precondition_achiever(
-                        fact_lm.facts, achiever_id, preconditioned_id);
+        for (auto &child: node->children) {
+            if (child.second == EdgeType::GREEDY_NECESSARY) {
+                Landmark &child_fact_lm = child.first->get_landmark();
+                if (child_fact_lm.is_derived) {
+                    continue;
                 }
+                size_t achiever_id =
+                    graph->add_node(fact_lm.possible_achievers, is_initially_true);
+                size_t preconditioned_id =
+                    graph->add_node(child_fact_lm.first_achievers, child_fact_lm.is_true_in_state(init_state));
+                graph->mark_lm_precondition_achiever(
+                    fact_lm.facts, achiever_id, preconditioned_id);
             }
         }
     }
@@ -80,14 +72,20 @@ void FactLandmarkGraphTranslatorFactory::add_edges(
     dalm_graph &graph, const LandmarkGraph &lm_graph, const State &init_state) {
     for (auto &node: lm_graph.get_nodes()) {
         Landmark &fact_lm = node->get_landmark();
+        int from_id = -1;
         if (fact_lm.is_true_in_state(init_state)) {
-            /* All edges starting in initially true facts are not
-               interesting for us since the cycles they possibly induce
-               are already resolved initially. */
+            from_id = graph->get_id(fact_lm.possible_achievers);
+        } else {
+            from_id = graph->get_id(fact_lm.first_achievers);
+            assert(from_id >= 0);
+        }
+        /*
+         * We do not add landmarks if they are true in the initial state
+         * and don't have orderings that can make them future again.
+         */
+        if (from_id == -1) {
             continue;
         }
-        int from_id = graph->get_id(fact_lm.first_achievers);
-        assert(from_id >= 0);
         for (auto &child : node->children) {
             Landmark &child_fact_lm = child.first->get_landmark();
             int to_id = graph->get_id(child.second >= EdgeType::NATURAL
@@ -120,8 +118,7 @@ shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::c
     add_nodes(graph, fact_graph, initial_state);
     add_edges(graph, fact_graph, initial_state);
     if (graph->get_number_of_landmarks() == 0) {
-        size_t id = graph->add_node({});
-        graph->mark_lm_initially_past(id);
+        graph->add_node({}, true);
     }
 
     utils::g_log << "Landmark graph of initial state contains "

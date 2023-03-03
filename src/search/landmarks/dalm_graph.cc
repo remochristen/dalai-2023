@@ -58,13 +58,21 @@ bool DisjunctiveActionLandmarkNode::depends_on(int node_id) const {
     return dependencies.count(node_id);
 }
 
-size_t DisjunctiveActionLandmarkGraph::add_node(const set<int> &actions) {
+size_t DisjunctiveActionLandmarkGraph::add_node(const set<int> &actions, bool true_in_initial) {
     auto it = ids.find(actions);
     if (it == ids.end()) {
         size_t id = ids.size();
         ids[actions] = id;
         lms.emplace_back(actions);
+        lm_true_in_initial.push_back(true_in_initial);
         return id;
+    }
+    /*
+     * If several fact landmarks lead to the same dalm, then it is true in initial
+     * only if *all* fact landmarks are true in the initial state.
+     */
+    if (!true_in_initial) {
+        lm_true_in_initial[it->second] = false;
     }
     return it->second;
 }
@@ -83,10 +91,6 @@ void DisjunctiveActionLandmarkGraph::add_edge(
     }
 }
 
-void DisjunctiveActionLandmarkGraph::mark_lm_initially_past(size_t id) {
-    initially_past_lms.push_back(id);
-}
-
 void DisjunctiveActionLandmarkGraph::mark_lm_goal_achiever(
     const FactPair &fact_pair, size_t lm) {
     //assert(goal_achiever_lms.count(fact_pair) == 0);
@@ -96,7 +100,7 @@ void DisjunctiveActionLandmarkGraph::mark_lm_goal_achiever(
 void DisjunctiveActionLandmarkGraph::mark_lm_precondition_achiever(
     const vector<FactPair> &fact_pairs, size_t achiever_lm,
     size_t preconditioned_lm) {
-    assert(!get_actions(achiever_lm).empty());
+    //assert(!get_actions(achiever_lm).empty());
     //assert(precondition_achiever_lms.count(pair) == 0);
     precondition_achiever_lms.emplace_back(
         fact_pairs, achiever_lm, preconditioned_lm);

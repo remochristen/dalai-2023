@@ -53,7 +53,7 @@ class DisjunctiveActionLandmarkGraph {
     size_t num_strong_orderings = 0;
     size_t num_weak_orderings = 0;
 
-    std::vector<size_t> initially_past_lms;
+    std::vector<bool> lm_true_in_initial;
     std::vector<std::pair<FactPair, size_t>> goal_achiever_lms;
     std::vector<precondition_achiever_triple> precondition_achiever_lms;
 
@@ -61,12 +61,11 @@ class DisjunctiveActionLandmarkGraph {
 public:
     explicit DisjunctiveActionLandmarkGraph() = default;
 
-    size_t add_node(const std::set<int> &actions);
+    size_t add_node(const std::set<int> &actions, bool true_in_initial);
     void add_edge(size_t from, size_t to, bool strong);
 
-    void mark_lm_initially_past(size_t id);
-    const std::vector<size_t> &get_initially_past_lms() const {
-        return initially_past_lms;
+    bool is_true_in_initial(int id) const {
+        return lm_true_in_initial[id];
     }
     void mark_lm_goal_achiever(const FactPair &fact_pair, size_t lm);
     void mark_lm_precondition_achiever (
