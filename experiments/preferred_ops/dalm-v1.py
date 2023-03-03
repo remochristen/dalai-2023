@@ -17,13 +17,13 @@ BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
 REVISIONS = ["6c8ae888a"]
 BUILDS = ["ipc23"]
 CONFIG_NICKS = [
-    (f"dalm-{'pref' if pref else 'nopref'}", [
+    (f"dalm-{heuristic}-{'pref' if pref else 'nopref'}", [
         "--search",
         "let(hlm,"
-        f"dalm_sum(fact_translator(lm_reasonable_orders_hps(lm_rhw())),"
+        f"{heuristic}(fact_translator(lm_reasonable_orders_hps(lm_rhw())),"
         f"transform=adapt_costs(one),pref={pref}), lazy_greedy([hlm], {'preferred=[hlm], ' if pref else ''}cost_type=one,"
         "reopen_closed=false))"
-    ]) for pref in [True, False]
+    ]) for pref in [True, False] for heuristic in ["dalm_sum", "dalm_greedy_hs"]
 ]
 CONFIGS = [
     IssueConfig(
