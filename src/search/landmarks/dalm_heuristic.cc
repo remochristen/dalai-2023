@@ -69,27 +69,22 @@ void DisjunctiveActionLandmarkHeuristic::compute_landmark_graph(
 }
 
 void DisjunctiveActionLandmarkHeuristic::generate_preferred_operators(
-    const State &state) {
-    /*
-      Find operators that achieve(simple or disjunctive) landmarks and prefer
-      them.
-
-      TODO: Conjunctive landmarks are ignored in *lm_graph->get_node(...)*, so
-       they are ignored when computing preferred operators. We consider this
-       a bug and want to fix it in issue1072.
-    */
+    const State &ancestor_state) {
+    // Find operators that achieve landmarks and prefer them.
     assert(successor_generator);
     vector<OperatorID> applicable_operators;
+    State state = convert_ancestor_state(ancestor_state);
     successor_generator->generate_applicable_ops(state, applicable_operators);
-    vector<OperatorID> preferred_operators;
 
+    OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_operators) {
         OperatorProxy op = task_proxy.get_operators()[op_id];
         for (int lm_id : landmarks_by_operator[op.get_id()]) {
-            // TODO: If landmark is future, mark as preferred and continue.
-            cout << lm_id << endl;
-            // OperatorsProxy operators = task_proxy.get_operators();
-            // set_preferred(operators[op_id]);
+            if (lm_status_manager->get_future_landmarks(
+                ancestor_state).test(lm_id)) {
+                set_preferred(operators[op_id]);
+                break;
+            }
         }
     }
 }
@@ -100,7 +95,7 @@ int DisjunctiveActionLandmarkHeuristic::compute_heuristic(
     int h = get_heuristic_value(ancestor_state);
 
     if (use_preferred_operators) {
-        generate_preferred_operators(state);
+        generate_preferred_operators(ancestor_state);
     }
 
     return h;
