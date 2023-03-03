@@ -15,9 +15,6 @@ DisjunctiveActionLandmarkHeuristic::DisjunctiveActionLandmarkHeuristic(
     const plugins::Options &opts)
     : Heuristic(opts),
       use_preferred_operators(opts.get<bool>("pref")),
-      prog_goal(opts.get<bool>("prog_goal")),
-      prog_gn(opts.get<bool>("prog_gn")),
-      prog_w(opts.get<bool>("prog_w")),
       successor_generator(nullptr) {
 }
 
@@ -40,7 +37,7 @@ void DisjunctiveActionLandmarkHeuristic::initialize(const plugins::Options &opts
 
     lm_status_manager =
         utils::make_unique_ptr<DisjunctiveActionLandmarkStatusManager>(
-            *lm_graph, prog_goal, prog_gn, prog_w);
+            *lm_graph);
 
     if (use_preferred_operators) {
         /* Ideally, we should reuse the successor generator of the main
@@ -148,9 +145,6 @@ void DisjunctiveActionLandmarkHeuristic::add_options_to_feature(plugins::Feature
         "identify preferred operators (see OptionCaveats#"
         "Using_preferred_operators_with_landmark_heuristics)",
         "false");
-    feature.add_option<bool>("prog_goal", "TODO", "true");
-    feature.add_option<bool>("prog_gn", "TODO", "true");
-    feature.add_option<bool>("prog_w", "TODO", "true");
 
     Heuristic::add_options_to_feature(feature);
 
@@ -158,3 +152,5 @@ void DisjunctiveActionLandmarkHeuristic::add_options_to_feature(plugins::Feature
                               "yes (if enabled; see ``pref`` option)");
 }
 }
+
+
