@@ -58,13 +58,23 @@ bool DisjunctiveActionLandmarkNode::depends_on(int node_id) const {
     return dependencies.count(node_id);
 }
 
-size_t DisjunctiveActionLandmarkGraph::add_node(const set<int> &actions, bool true_in_initial) {
+DisjunctiveActionLandmarkGraph::DisjunctiveActionLandmarkGraph(bool uaa_landmarks, const TaskProxy task_proxy)
+    : uaa_landmarks(uaa_landmarks) {
+    if (uaa_landmarks) {
+        op_to_uaa_lm = vector<int>(task_proxy.get_operators().size(), -1);
+    }
+}
+
+size_t DisjunctiveActionLandmarkGraph::add_node(const set<int> &actions, bool true_in_initial, int op_id) {
     auto it = ids.find(actions);
     if (it == ids.end()) {
         size_t id = ids.size();
         ids[actions] = id;
         lms.emplace_back(actions);
         lm_true_in_initial.push_back(true_in_initial);
+        if (uaa_landmarks && op_id >= 0) {
+            op_to_uaa_lm[op_id] = id;
+        }
         return id;
     }
     /*
@@ -73,6 +83,9 @@ size_t DisjunctiveActionLandmarkGraph::add_node(const set<int> &actions, bool tr
      */
     if (!true_in_initial) {
         lm_true_in_initial[it->second] = false;
+    }
+    if (uaa_landmarks && op_id >= 0) {
+        op_to_uaa_lm[op_id] = it->second;
     }
     return it->second;
 }
@@ -209,5 +222,10 @@ vector<map<int, bool>> DisjunctiveActionLandmarkGraph::to_adj_list() const {
         }
     }
     return adj;
+}
+
+int DisjunctiveActionLandmarkGraph::get_uaa_landmark_for_operator(int op_id) const {
+    assert(op_to_uaa_lm.size() > op_id);
+    return op_to_uaa_lm[op_id];
 }
 }

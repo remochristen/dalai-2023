@@ -18,6 +18,7 @@ DisjunctiveActionLandmarkStatusManager::DisjunctiveActionLandmarkStatusManager(
       progress_goals(progress_goals),
       progress_greedy_necessary_orderings(progress_greedy_necessary_orderings),
       progress_weak_orderings(progress_weak_orderings),
+      progress_uaa_landmarks(graph.has_uaa_landmarks()),
       past_lms(vector<bool>(graph.get_number_of_landmarks(), true)),
       future_lms(vector<bool>(graph.get_number_of_landmarks(), false)) {
 }
@@ -74,6 +75,12 @@ void DisjunctiveActionLandmarkStatusManager::process_state_transition(
     }
     if (progress_weak_orderings) {
         progress_weak(past, fut);
+    }
+    if (progress_uaa_landmarks) {
+        int lm_index = lm_graph.get_uaa_landmark_for_operator(op_id.get_index());
+        if (lm_index >= 0) {
+            fut.set(lm_index);
+        }
     }
 }
 

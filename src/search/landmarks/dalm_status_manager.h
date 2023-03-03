@@ -16,6 +16,7 @@ class DisjunctiveActionLandmarkStatusManager {
     const bool progress_goals;
     const bool progress_greedy_necessary_orderings;
     const bool progress_weak_orderings;
+    const bool progress_uaa_landmarks;
 
     PerStateBitset past_lms;
     PerStateBitset future_lms;

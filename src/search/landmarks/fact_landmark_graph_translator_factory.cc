@@ -25,7 +25,8 @@ static void remove_derived_landmarks(LandmarkGraph &lm_graph) {
 
 FactLandmarkGraphTranslatorFactory::FactLandmarkGraphTranslatorFactory(
     const plugins::Options &opts)
-    : lm(opts.get<shared_ptr<LandmarkFactory>>("lm")) {
+    : lm(opts.get<shared_ptr<LandmarkFactory>>("lm")),
+      uaa_landmarks(opts.get<bool>("uaa_landmarks")) {
 }
 
 void FactLandmarkGraphTranslatorFactory::add_nodes(
@@ -108,15 +109,61 @@ void FactLandmarkGraphTranslatorFactory::add_edges(
     }
 }
 
+void FactLandmarkGraphTranslatorFactory::add_uaa_landmarks(dalm_graph &graph, const TaskProxy task_proxy) {
+    // Collect for each fact which operators have it as precondition
+    vector<vector<set<int>>> precondition_of(task_proxy.get_variables().size());
+    for (size_t i = 0; i < precondition_of.size(); ++i) {
+        precondition_of[i].resize(task_proxy.get_variables()[i].get_domain_size());
+    }
+    for (OperatorProxy op_proxy : task_proxy.get_operators()) {
+        for (FactProxy pre : op_proxy.get_preconditions()) {
+            precondition_of[pre.get_pair().var][pre.get_pair().value].insert(op_proxy.get_id());
+        }
+    }
+
+    GoalsProxy goal = task_proxy.get_goals();
+    for (OperatorProxy op_proxy : task_proxy.get_operators()) {
+        // If the operator makes a goal true, then it is useful in itself, no uaa landmark needed.
+        bool effect_contains_goal = false;
+        for (EffectProxy effect_proxy : op_proxy.get_effects()) {
+            FactProxy effect = effect_proxy.get_fact();
+            for (FactProxy goal_fact : goal) {
+                if (effect == goal_fact) {
+                    effect_contains_goal = true;
+                    break;
+                }
+            }
+            if (effect_contains_goal) {
+                break;
+            }
+        }
+        if (effect_contains_goal) {
+            continue;
+        }
+
+        // The operator does not make a goal true -> one of it's effect must be used as a precondition at some point.
+        set<int> uaa_landmark;
+        for (EffectProxy effect : op_proxy.get_effects()) {
+            FactPair pair = effect.get_fact().get_pair();
+            set<int> ops = precondition_of[pair.var][pair.value];
+            uaa_landmark.insert(ops.begin(), ops.end());
+        }
+        graph->add_node(uaa_landmark, true, op_proxy.get_id());
+    }
+}
+
 shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::compute_landmark_graph(
     const shared_ptr<AbstractTask> &task) {
     const TaskProxy task_proxy(*task);
     const State &initial_state = task_proxy.get_initial_state();
     LandmarkGraph &fact_graph = *lm->compute_lm_graph(task);
     remove_derived_landmarks(fact_graph);
-    dalm_graph graph = make_shared<DisjunctiveActionLandmarkGraph>();
+    dalm_graph graph = make_shared<DisjunctiveActionLandmarkGraph>(uaa_landmarks, task_proxy);
     add_nodes(graph, fact_graph, initial_state);
     add_edges(graph, fact_graph, initial_state);
+    if (uaa_landmarks) {
+        add_uaa_landmarks(graph, task_proxy);
+    }
     if (graph->get_number_of_landmarks() == 0) {
         graph->add_node({}, true);
     }
@@ -144,6 +191,9 @@ public:
             "Fact to Disjunctive Action Landmark Graph Translator");
         add_option<shared_ptr<LandmarkFactory>>(
             "lm", "Method to produce landmarks");
+        add_option<bool>("uaa_landmarks",
+                         "TODO",
+                         "false");
     }
 };
 

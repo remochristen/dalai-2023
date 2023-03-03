@@ -52,16 +52,18 @@ class DisjunctiveActionLandmarkGraph {
     std::vector<DisjunctiveActionLandmarkNode> lms;
     size_t num_strong_orderings = 0;
     size_t num_weak_orderings = 0;
+    bool uaa_landmarks;
 
     std::vector<bool> lm_true_in_initial;
     std::vector<std::pair<FactPair, size_t>> goal_achiever_lms;
     std::vector<precondition_achiever_triple> precondition_achiever_lms;
+    std::vector<int> op_to_uaa_lm;
 
     void dump_lm(int id) const;
 public:
-    explicit DisjunctiveActionLandmarkGraph() = default;
+    explicit DisjunctiveActionLandmarkGraph(bool uaa_landmarks, const TaskProxy task_proxy);
 
-    size_t add_node(const std::set<int> &actions, bool true_in_initial);
+    size_t add_node(const std::set<int> &actions, bool true_in_initial, int op_id = -1);
     void add_edge(size_t from, size_t to, bool strong);
 
     bool is_true_in_initial(int id) const {
@@ -100,6 +102,11 @@ public:
     void dump_dot() const;
 
     std::vector<std::map<int, bool>> to_adj_list() const;
+
+    bool has_uaa_landmarks() const {
+        return uaa_landmarks;
+    }
+    int get_uaa_landmark_for_operator(int op_id) const;
 };
 }
 
