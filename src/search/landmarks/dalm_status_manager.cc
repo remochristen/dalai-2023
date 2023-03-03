@@ -36,9 +36,11 @@ void DisjunctiveActionLandmarkStatusManager::process_initial_state(
     BitsetView future = get_future_landmarks(initial_state);
     past.reset();
     future.set();
-    for (size_t id : lm_graph.get_initially_past_lms()) {
-        past.set(static_cast<int>(id));
-        future.reset(static_cast<int>(id));
+    for (size_t id = 0; id < lm_graph.get_number_of_landmarks(); ++id) {
+        if (lm_graph.is_true_in_initial(id)) {
+            past.set(static_cast<int>(id));
+            future.reset(static_cast<int>(id));
+        }
     }
     if (progress_weak_orderings) {
         progress_weak(past, future);

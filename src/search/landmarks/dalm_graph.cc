@@ -58,13 +58,21 @@ bool DisjunctiveActionLandmarkNode::depends_on(int node_id) const {
     return dependencies.count(node_id);
 }
 
-size_t DisjunctiveActionLandmarkGraph::add_node(const set<int> &actions) {
+size_t DisjunctiveActionLandmarkGraph::add_node(const set<int> &actions, bool true_in_initial) {
     auto it = ids.find(actions);
     if (it == ids.end()) {
         size_t id = ids.size();
         ids[actions] = id;
         lms.emplace_back(actions);
+        lm_true_in_initial.push_back(true_in_initial);
         return id;
+    }
+    /*
+     * If several fact landmarks lead to the same dalm, then it is true in initial
+     * only if *all* fact landmarks are true in the initial state.
+     */
+    if (!true_in_initial) {
+        lm_true_in_initial[it->second] = false;
     }
     return it->second;
 }
@@ -81,10 +89,6 @@ void DisjunctiveActionLandmarkGraph::add_edge(
     } else {
         dalm_node.add_weak_dependency(from, num_weak_orderings);
     }
-}
-
-void DisjunctiveActionLandmarkGraph::mark_lm_initially_past(size_t id) {
-    initially_past_lms.push_back(id);
 }
 
 void DisjunctiveActionLandmarkGraph::mark_lm_goal_achiever(
