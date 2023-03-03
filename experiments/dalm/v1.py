@@ -1,14 +1,16 @@
 #! /usr/bin/env python3
 
 import os
+import sys
 
 from lab.environments import LocalEnvironment, BaselSlurmEnvironment
 from lab.reports import Attribute
 
+sys.path.append(os.getcwd() + '/..')
 import common_setup
 from common_setup import IssueConfig, IssueExperiment
 
-ARCHIVE_PATH = "ai/buechner/ipc23-landmarks"
+ARCHIVE_PATH = "buechner/ipc23-landmarks"
 BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
 REVISIONS = [
     "b2508ecdd",
@@ -46,7 +48,7 @@ exp.add_suite(BENCHMARKS_DIR, SUITE)
 exp.add_parser(exp.EXITCODE_PARSER)
 exp.add_parser(exp.SINGLE_SEARCH_PARSER)
 exp.add_parser(exp.PLANNER_PARSER)
-exp.add_parser("landmark_parser.py")
+exp.add_parser("../landmark_parser.py")
 
 ATTRIBUTES = IssueExperiment.DEFAULT_TABLE_ATTRIBUTES + [
     Attribute("landmarks", min_wins=False),

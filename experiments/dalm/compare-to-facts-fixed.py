@@ -2,9 +2,11 @@
 
 import itertools
 import os
+import sys
 
 from lab.reports import Attribute
 
+sys.path.append(os.getcwd() + '/..')
 import common_setup
 from common_setup import IssueExperiment
 
