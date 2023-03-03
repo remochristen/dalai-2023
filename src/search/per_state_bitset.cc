@@ -42,6 +42,12 @@ void BitsetView::reset() {
     }
 }
 
+void BitsetView::set() {
+    for (int i = 0; i < data.size(); ++i) {
+        data[i] = BitsetMath::ones;
+    }
+}
+
 bool BitsetView::test(int index) const {
     assert(index >= 0 && index < num_bits);
     int block_index = BitsetMath::block_index(index);
