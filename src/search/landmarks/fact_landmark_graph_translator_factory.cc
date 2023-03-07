@@ -3,6 +3,7 @@
 #include "landmark_factory.h"
 
 #include "../plugins/plugin.h"
+#include "../utils/timer.h"
 
 #include <algorithm>
 
@@ -119,9 +120,19 @@ void FactLandmarkGraphTranslatorFactory::add_uaa_landmarks(dalm_graph &graph, co
         for (FactProxy pre : op_proxy.get_preconditions()) {
             precondition_of[pre.get_pair().var][pre.get_pair().value].insert(op_proxy.get_id());
         }
+        for (EffectProxy eff : op_proxy.get_effects()) {
+            for (FactProxy eff_cond : eff.get_conditions()) {
+                precondition_of[eff_cond.get_pair().var][eff_cond.get_pair().value].insert(op_proxy.get_id());
+            }
+        }
     }
 
+    utils::Timer gather_tagged(false);
+    utils::Timer make_set(false);
+    utils::Timer insert_lm(false);
+    utils::Timer insert_set(false);
     GoalsProxy goal = task_proxy.get_goals();
+    vector<bool> tagged(task_proxy.get_operators().size(), false);
     for (OperatorProxy op_proxy : task_proxy.get_operators()) {
         // If the operator makes a goal true, then it is useful in itself, no uaa landmark needed.
         bool effect_contains_goal = false;
@@ -140,16 +151,42 @@ void FactLandmarkGraphTranslatorFactory::add_uaa_landmarks(dalm_graph &graph, co
         if (effect_contains_goal) {
             continue;
         }
-
-        // The operator does not make a goal true -> one of it's effect must be used as a precondition at some point.
+        // The operator does not make a goal true -> one of its effect must be used as a precondition at some point.
         set<int> uaa_landmark;
+        gather_tagged.resume();
         for (EffectProxy effect : op_proxy.get_effects()) {
             FactPair pair = effect.get_fact().get_pair();
-            set<int> ops = precondition_of[pair.var][pair.value];
-            uaa_landmark.insert(ops.begin(), ops.end());
+//            set<int> &ops = precondition_of[pair.var][pair.value];
+            for (int op : precondition_of[pair.var][pair.value]) {
+                if (!tagged[op]) {
+                    tagged[op] = true;
+                }
+            }
+//            if (uaa_landmark.empty()) {
+//                uaa_landmark = ops;
+//            } else {
+//                uaa_landmark.insert(ops.begin(), ops.end());
+//            }
         }
+        gather_tagged.stop();
+        make_set.resume();
+        for (size_t i = 0; i < tagged.size(); ++i) {
+            if (tagged[i]) {
+//                insert_set.resume();
+                uaa_landmark.insert(uaa_landmark.end(), i);
+//                insert_set.stop();
+                tagged[i] = false;
+            }
+        }
+        make_set.stop();
+        insert_lm.resume();
         graph->add_node(uaa_landmark, true, op_proxy.get_id());
+        insert_lm.stop();
     }
+    cout << "Gather tagged timer: " << gather_tagged << endl;
+    cout << "Make set timer:      " << make_set << endl;
+    cout << "Insert set timer:    " << insert_set << endl;
+    cout << "Insert lm timer:     " << insert_lm << endl;
 }
 
 shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::compute_landmark_graph(
