@@ -10,14 +10,8 @@ namespace landmarks {
   computing new landmark information.
 */
 DisjunctiveActionLandmarkStatusManager::DisjunctiveActionLandmarkStatusManager(
-    DisjunctiveActionLandmarkGraph &graph,
-    bool progress_goals,
-    bool progress_greedy_necessary_orderings,
-    bool progress_weak_orderings)
+    DisjunctiveActionLandmarkGraph &graph)
     : lm_graph(graph),
-      progress_goals(progress_goals),
-      progress_greedy_necessary_orderings(progress_greedy_necessary_orderings),
-      progress_weak_orderings(progress_weak_orderings),
       progress_uaa_landmarks(graph.has_uaa_landmarks()),
       past_lms(vector<bool>(graph.get_number_of_landmarks(), true)),
       future_lms(vector<bool>(graph.get_number_of_landmarks(), false)) {
@@ -43,9 +37,7 @@ void DisjunctiveActionLandmarkStatusManager::process_initial_state(
             future.reset(static_cast<int>(id));
         }
     }
-    if (progress_weak_orderings) {
-        progress_weak(past, future);
-    }
+    progress_weak(past, future);
 }
 
 void DisjunctiveActionLandmarkStatusManager::process_state_transition(
@@ -66,16 +58,9 @@ void DisjunctiveActionLandmarkStatusManager::process_state_transition(
     assert(parent_fut.size() == num_landmarks);
 
     progress_basic(parent_past, parent_fut, past, fut, op_id.get_index());
-
-    if (progress_goals) {
-        progress_goal(ancestor_state, fut);
-    }
-    if (progress_greedy_necessary_orderings) {
-        progress_greedy_necessary(ancestor_state, past, fut);
-    }
-    if (progress_weak_orderings) {
-        progress_weak(past, fut);
-    }
+    progress_goal(ancestor_state, fut);
+    progress_greedy_necessary(ancestor_state, past, fut);
+    progress_weak(past, fut);
     if (progress_uaa_landmarks) {
         int lm_index = lm_graph.get_uaa_landmark_for_operator(op_id.get_index());
         if (lm_index >= 0) {

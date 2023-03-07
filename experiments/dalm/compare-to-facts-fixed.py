@@ -2,9 +2,11 @@
 
 import itertools
 import os
+import sys
 
 from lab.reports import Attribute
 
+sys.path.append(os.getcwd() + '/..')
 import common_setup
 from common_setup import IssueExperiment
 
@@ -16,8 +18,11 @@ exp = IssueExperiment(
     configs=[],
 )
 
-exp.add_fetcher("../progressions/data/progressions-v3-eval/", name='fetch-facts')
-exp.add_fetcher("data/dalm-v5-eval/", name='fetch-dalms', merge=True)
+def remove_domains_with_derived(run):
+    return run['domain'] not in ['optical-telegraphs', 'philosophers', 'psr-large', 'psr-middle']
+
+exp.add_fetcher("../../../../buecle01/ipc-landmarks/experiments/progressions/data/progressions-v3-eval/", name='fetch-facts', filter=remove_domains_with_derived)
+exp.add_fetcher("data/dalm-v6-eval/", name='fetch-dalms', merge=True)
 
 ATTRIBUTES = IssueExperiment.DEFAULT_TABLE_ATTRIBUTES + [
     #Attribute("landmarks", min_wins=False),

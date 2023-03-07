@@ -13,9 +13,6 @@ enum LandmarkStatus {PAST = 0, FUTURE = 1, PAST_AND_FUTURE = 2};
 
 class DisjunctiveActionLandmarkStatusManager {
     DisjunctiveActionLandmarkGraph &lm_graph;
-    const bool progress_goals;
-    const bool progress_greedy_necessary_orderings;
-    const bool progress_weak_orderings;
     const bool progress_uaa_landmarks;
 
     PerStateBitset past_lms;
@@ -30,10 +27,7 @@ class DisjunctiveActionLandmarkStatusManager {
     void progress_weak(const BitsetView &past, BitsetView &fut);
 public:
     explicit DisjunctiveActionLandmarkStatusManager(
-        DisjunctiveActionLandmarkGraph &graph,
-        bool progress_goals,
-        bool progress_greedy_necessary_orderings,
-        bool progress_weak_orderings);
+        DisjunctiveActionLandmarkGraph &graph);
 
     BitsetView get_past_landmarks(const State &state);
     BitsetView get_future_landmarks(const State &state);

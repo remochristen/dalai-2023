@@ -15,9 +15,6 @@ DisjunctiveActionLandmarkHeuristic::DisjunctiveActionLandmarkHeuristic(
     const plugins::Options &opts)
     : Heuristic(opts),
       use_preferred_operators(opts.get<bool>("pref")),
-      prog_goal(opts.get<bool>("prog_goal")),
-      prog_gn(opts.get<bool>("prog_gn")),
-      prog_w(opts.get<bool>("prog_w")),
       successor_generator(nullptr) {
 }
 
@@ -40,7 +37,7 @@ void DisjunctiveActionLandmarkHeuristic::initialize(const plugins::Options &opts
 
     lm_status_manager =
         utils::make_unique_ptr<DisjunctiveActionLandmarkStatusManager>(
-            *lm_graph, prog_goal, prog_gn, prog_w);
+            *lm_graph);
 
     if (use_preferred_operators) {
         /* Ideally, we should reuse the successor generator of the main
@@ -72,27 +69,22 @@ void DisjunctiveActionLandmarkHeuristic::compute_landmark_graph(
 }
 
 void DisjunctiveActionLandmarkHeuristic::generate_preferred_operators(
-    const State &state) {
-    /*
-      Find operators that achieve(simple or disjunctive) landmarks and prefer
-      them.
-
-      TODO: Conjunctive landmarks are ignored in *lm_graph->get_node(...)*, so
-       they are ignored when computing preferred operators. We consider this
-       a bug and want to fix it in issue1072.
-    */
+    const State &ancestor_state) {
+    // Find operators that achieve landmarks and prefer them.
     assert(successor_generator);
     vector<OperatorID> applicable_operators;
+    State state = convert_ancestor_state(ancestor_state);
     successor_generator->generate_applicable_ops(state, applicable_operators);
-    vector<OperatorID> preferred_operators;
 
+    OperatorsProxy operators = task_proxy.get_operators();
     for (OperatorID op_id : applicable_operators) {
         OperatorProxy op = task_proxy.get_operators()[op_id];
         for (int lm_id : landmarks_by_operator[op.get_id()]) {
-            // TODO: If landmark is future, mark as preferred and continue.
-            cout << lm_id << endl;
-            // OperatorsProxy operators = task_proxy.get_operators();
-            // set_preferred(operators[op_id]);
+            if (lm_status_manager->get_future_landmarks(
+                ancestor_state).test(lm_id)) {
+                set_preferred(operators[op_id]);
+                break;
+            }
         }
     }
 }
@@ -103,7 +95,7 @@ int DisjunctiveActionLandmarkHeuristic::compute_heuristic(
     int h = get_heuristic_value(ancestor_state);
 
     if (use_preferred_operators) {
-        generate_preferred_operators(state);
+        generate_preferred_operators(ancestor_state);
     }
 
     return h;
@@ -148,9 +140,6 @@ void DisjunctiveActionLandmarkHeuristic::add_options_to_feature(plugins::Feature
         "identify preferred operators (see OptionCaveats#"
         "Using_preferred_operators_with_landmark_heuristics)",
         "false");
-    feature.add_option<bool>("prog_goal", "TODO", "true");
-    feature.add_option<bool>("prog_gn", "TODO", "true");
-    feature.add_option<bool>("prog_w", "TODO", "true");
 
     Heuristic::add_options_to_feature(feature);
 
@@ -158,3 +147,5 @@ void DisjunctiveActionLandmarkHeuristic::add_options_to_feature(plugins::Feature
                               "yes (if enabled; see ``pref`` option)");
 }
 }
+
+

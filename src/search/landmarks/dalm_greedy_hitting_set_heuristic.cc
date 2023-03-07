@@ -28,6 +28,14 @@ namespace landmarks {
         for (int id = 0; id < (int)landmark_active.size(); ++id) {
             if (lm_status_manager->get_landmark_status(
                     ancestor_state, id) != PAST) {
+                if (lm_graph->get_actions(id).size() == 0) {
+                    /* If the computation runs fully through all landmarks will be marked inactive and the op hits
+                     * will all be 0, but if we return here this is not the case, so we need to reset it manually.
+                     */
+                    fill(landmark_active.begin(), landmark_active.end(), false);
+                    fill(op_hits.begin(), op_hits.end(),0);
+                    return DEAD_END;
+                }
                 landmark_active[id] = true;
                 for (int op_id : lm_graph->get_actions(id)) {
                     op_hits[op_id]++;
