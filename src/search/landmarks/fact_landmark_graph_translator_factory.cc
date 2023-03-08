@@ -3,7 +3,6 @@
 #include "landmark_factory.h"
 
 #include "../plugins/plugin.h"
-#include "../utils/timer.h"
 
 #include <algorithm>
 
@@ -27,7 +26,8 @@ static void remove_derived_landmarks(LandmarkGraph &lm_graph) {
 FactLandmarkGraphTranslatorFactory::FactLandmarkGraphTranslatorFactory(
     const plugins::Options &opts)
     : lm(opts.get<shared_ptr<LandmarkFactory>>("lm")),
-      uaa_landmarks(opts.get<bool>("uaa_landmarks")) {
+      uaa_landmarks(opts.get<bool>("uaa_landmarks")),
+      max_uaa_dalm_size(opts.get<int>("max_uaa_dalm_size")) {
 }
 
 void FactLandmarkGraphTranslatorFactory::add_nodes(
@@ -111,6 +111,7 @@ void FactLandmarkGraphTranslatorFactory::add_edges(
 }
 
 void FactLandmarkGraphTranslatorFactory::add_uaa_landmarks(dalm_graph &graph, const TaskProxy task_proxy) {
+    int too_large_sets  = 0;
     // Collect for each fact which operators have it as precondition
     vector<vector<set<int>>> precondition_of(task_proxy.get_variables().size());
     for (size_t i = 0; i < precondition_of.size(); ++i) {
@@ -127,66 +128,56 @@ void FactLandmarkGraphTranslatorFactory::add_uaa_landmarks(dalm_graph &graph, co
         }
     }
 
-    utils::Timer gather_tagged(false);
-    utils::Timer make_set(false);
-    utils::Timer insert_lm(false);
-    utils::Timer insert_set(false);
     GoalsProxy goal = task_proxy.get_goals();
-    vector<bool> tagged(task_proxy.get_operators().size(), false);
     for (OperatorProxy op_proxy : task_proxy.get_operators()) {
-        // If the operator makes a goal true, then it is useful in itself, no uaa landmark needed.
-        bool effect_contains_goal = false;
+        vector<const set<int> *> dalm_op_sets;
+        dalm_op_sets.reserve(op_proxy.get_effects().size());
+        int largest_set_index = 0;
+        int size_estimate = 0;
+        /*
+         * We discard a potential uaa if
+         *  - it makes a goal true -> then it is useful in itself
+         *  - its size exceeds a given threshold -> larger dalms are less useful and require more computational effort
+         */
+        bool discard = false;
         for (EffectProxy effect_proxy : op_proxy.get_effects()) {
             FactProxy effect = effect_proxy.get_fact();
             for (FactProxy goal_fact : goal) {
                 if (effect == goal_fact) {
-                    effect_contains_goal = true;
+                    discard = true;
                     break;
                 }
             }
-            if (effect_contains_goal) {
+            if (discard) {
                 break;
             }
+            const set<int> *op_set = &(precondition_of[effect.get_pair().var][effect.get_pair().value]);
+            size_estimate += op_set->size();
+            if (size_estimate >= max_uaa_dalm_size) {
+                discard = true;
+                too_large_sets++;
+                break;
+            }
+            dalm_op_sets.push_back(op_set);
+            if (op_set->size() > dalm_op_sets[largest_set_index]->size()) {
+                largest_set_index = dalm_op_sets.size()-1;
+            }
         }
-        if (effect_contains_goal) {
+        if (discard) {
             continue;
         }
-        // The operator does not make a goal true -> one of its effect must be used as a precondition at some point.
-        set<int> uaa_landmark;
-        gather_tagged.resume();
-        for (EffectProxy effect : op_proxy.get_effects()) {
-            FactPair pair = effect.get_fact().get_pair();
-//            set<int> &ops = precondition_of[pair.var][pair.value];
-            for (int op : precondition_of[pair.var][pair.value]) {
-                if (!tagged[op]) {
-                    tagged[op] = true;
-                }
-            }
-//            if (uaa_landmark.empty()) {
-//                uaa_landmark = ops;
-//            } else {
-//                uaa_landmark.insert(ops.begin(), ops.end());
-//            }
+
+        // Swap the largest set to the front since copy assignment is faster than range insert.
+        if (largest_set_index > 0) {
+            swap(dalm_op_sets[0], dalm_op_sets[largest_set_index]);
         }
-        gather_tagged.stop();
-        make_set.resume();
-        for (size_t i = 0; i < tagged.size(); ++i) {
-            if (tagged[i]) {
-//                insert_set.resume();
-                uaa_landmark.insert(uaa_landmark.end(), i);
-//                insert_set.stop();
-                tagged[i] = false;
-            }
+        set<int> uaa_landmark = *(dalm_op_sets[0]);
+        for (size_t i = 1; i < dalm_op_sets.size(); ++i) {
+            uaa_landmark.insert(dalm_op_sets[i]->begin(), dalm_op_sets[i]->end());
         }
-        make_set.stop();
-        insert_lm.resume();
         graph->add_node(uaa_landmark, true, op_proxy.get_id());
-        insert_lm.stop();
     }
-    cout << "Gather tagged timer: " << gather_tagged << endl;
-    cout << "Make set timer:      " << make_set << endl;
-    cout << "Insert set timer:    " << insert_set << endl;
-    cout << "Insert lm timer:     " << insert_lm << endl;
+    utils::g_log << "Number of too large uaa dalms: " << too_large_sets << endl;
 }
 
 shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::compute_landmark_graph(
@@ -231,6 +222,9 @@ public:
         add_option<bool>("uaa_landmarks",
                          "TODO",
                          "false");
+        add_option<int>("max_uaa_dalm_size",
+                         "TODO",
+                         "5000");
     }
 };
 

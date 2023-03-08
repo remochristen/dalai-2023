@@ -12,6 +12,7 @@ class FactLandmarkGraphTranslatorFactory : public LandmarkGraphFactory {
     const std::shared_ptr<LandmarkFactory> lm;
     std::map<std::set<int>, size_t> ids;
     bool uaa_landmarks;
+    int max_uaa_dalm_size;
 
     void add_nodes(dalm_graph &graph, const LandmarkGraph &lm_graph,
                    const State &init_state);
