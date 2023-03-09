@@ -107,6 +107,7 @@ public:
         return uaa_landmarks;
     }
     int get_uaa_landmark_for_operator(int op_id) const;
+    int get_num_non_uaa_dalms();
 };
 }
 

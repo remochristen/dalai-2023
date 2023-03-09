@@ -228,4 +228,14 @@ int DisjunctiveActionLandmarkGraph::get_uaa_landmark_for_operator(int op_id) con
     assert(op_to_uaa_lm.size() > op_id);
     return op_to_uaa_lm[op_id];
 }
+
+int DisjunctiveActionLandmarkGraph::get_num_non_uaa_dalms() {
+    int min_id = lms.size();
+    for (size_t i = 0; i < op_to_uaa_lm.size(); ++i) {
+        if (op_to_uaa_lm[i] >= 0 && op_to_uaa_lm[i] < min_id) {
+            min_id = op_to_uaa_lm[i];
+        }
+    }
+    return min_id;
+}
 }
