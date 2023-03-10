@@ -68,6 +68,7 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
             }
         }
     }
+    graph->set_non_uaa_dalms();
 }
 
 void FactLandmarkGraphTranslatorFactory::add_edges(

@@ -59,7 +59,7 @@ bool DisjunctiveActionLandmarkNode::depends_on(int node_id) const {
 }
 
 DisjunctiveActionLandmarkGraph::DisjunctiveActionLandmarkGraph(bool uaa_landmarks, const TaskProxy task_proxy)
-    : uaa_landmarks(uaa_landmarks) {
+    : uaa_landmarks(uaa_landmarks), non_uaa_dalms(-1) {
     if (uaa_landmarks) {
         op_to_uaa_lm = vector<int>(task_proxy.get_operators().size(), -1);
     }
@@ -227,15 +227,5 @@ vector<map<int, bool>> DisjunctiveActionLandmarkGraph::to_adj_list() const {
 int DisjunctiveActionLandmarkGraph::get_uaa_landmark_for_operator(int op_id) const {
     assert(op_to_uaa_lm.size() > op_id);
     return op_to_uaa_lm[op_id];
-}
-
-int DisjunctiveActionLandmarkGraph::get_num_non_uaa_dalms() {
-    int min_id = lms.size();
-    for (size_t i = 0; i < op_to_uaa_lm.size(); ++i) {
-        if (op_to_uaa_lm[i] >= 0 && op_to_uaa_lm[i] < min_id) {
-            min_id = op_to_uaa_lm[i];
-        }
-    }
-    return min_id;
 }
 }

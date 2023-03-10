@@ -53,6 +53,7 @@ class DisjunctiveActionLandmarkGraph {
     size_t num_strong_orderings = 0;
     size_t num_weak_orderings = 0;
     bool uaa_landmarks;
+    int non_uaa_dalms;
 
     std::vector<bool> lm_true_in_initial;
     std::vector<std::pair<FactPair, size_t>> goal_achiever_lms;
@@ -107,7 +108,12 @@ public:
         return uaa_landmarks;
     }
     int get_uaa_landmark_for_operator(int op_id) const;
-    int get_num_non_uaa_dalms();
+    void set_non_uaa_dalms() {
+        non_uaa_dalms = lms.size();
+    }
+    int get_num_non_uaa_dalms() {
+        return non_uaa_dalms;
+    }
 };
 }
 
