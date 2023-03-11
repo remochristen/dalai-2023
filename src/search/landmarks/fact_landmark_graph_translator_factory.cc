@@ -120,6 +120,7 @@ shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::c
     if (graph->get_number_of_landmarks() == 0) {
         graph->add_node({}, true);
     }
+    graph->order_dalms_with_relevant_past_first();
 
     utils::g_log << "Landmark graph of initial state contains "
                  << graph->get_number_of_landmarks() << endl;
