@@ -58,8 +58,23 @@ bool DisjunctiveActionLandmarkNode::depends_on(int node_id) const {
     return dependencies.count(node_id);
 }
 
+void DisjunctiveActionLandmarkNode::swap_ids(const unordered_map<size_t, size_t> &swap_mapping) {
+    vector<pair<int, OrderingType>> new_dependencies;
+    new_dependencies.reserve(dependencies.size());
+    for (auto &entry : swap_mapping) {
+        auto it = dependencies.find(entry.first);
+        if (it != dependencies.end()) {
+            new_dependencies.push_back({entry.second, it->second});
+            dependencies.erase(it);
+        }
+    }
+    for (auto new_dependency : new_dependencies) {
+        dependencies[new_dependency.first] = new_dependency.second;
+    }
+}
+
 DisjunctiveActionLandmarkGraph::DisjunctiveActionLandmarkGraph(bool uaa_landmarks, const TaskProxy task_proxy)
-    : uaa_landmarks(uaa_landmarks), non_uaa_dalms(-1) {
+    : uaa_landmarks(uaa_landmarks) {
     if (uaa_landmarks) {
         op_to_uaa_lm = vector<int>(task_proxy.get_operators().size(), -1);
     }
@@ -101,6 +116,9 @@ void DisjunctiveActionLandmarkGraph::add_edge(
             from, num_strong_orderings, num_weak_orderings);
     } else {
         dalm_node.add_weak_dependency(from, num_weak_orderings);
+        if (last_relevant_past_dalm < from) {
+            last_relevant_past_dalm = from;
+        }
     }
 }
 
@@ -113,6 +131,9 @@ void DisjunctiveActionLandmarkGraph::mark_lm_goal_achiever(
 void DisjunctiveActionLandmarkGraph::mark_lm_precondition_achiever(
     const vector<FactPair> &fact_pairs, size_t achiever_lm,
     size_t preconditioned_lm) {
+    if (last_relevant_past_dalm < preconditioned_lm) {
+        last_relevant_past_dalm = preconditioned_lm;
+    }
     //assert(!get_actions(achiever_lm).empty());
     //assert(precondition_achiever_lms.count(pair) == 0);
     precondition_achiever_lms.emplace_back(
@@ -162,8 +183,32 @@ void DisjunctiveActionLandmarkGraph::dump_lm(int id) const {
 
 void DisjunctiveActionLandmarkGraph::dump() const {
     cout << "== Disjunctive Action Landmark Graph ==" << endl;
+    for (auto entry : ids) {
+        cout << "lm" << entry.second << ": ";
+        for (int action :  entry.first) {
+            cout << action << " ";
+        }
+        cout << endl;
+    }
     for (size_t id = 0; id < lms.size(); ++id) {
         dump_lm(id);
+    }
+    cout << "true in initial: ";
+    for (bool entry : lm_true_in_initial) {
+        cout << entry << " ";
+    }
+    cout << endl;
+    cout << "Goal achievers:" << endl;
+    for (auto entry  : goal_achiever_lms) {
+        cout << entry.first.var << "=" << entry.first.value << " -> " << entry.second << endl;
+    }
+    cout << "precondition achiever lms:" << endl;
+    for (auto entry : precondition_achiever_lms) {
+        cout << entry.achiever_lm << " -> " << entry.preconditioned_lm << ": ";
+        for (auto fact : entry.facts) {
+            cout << fact.var << "=" << fact.value << ", ";
+        }
+        cout << endl;
     }
     cout << "== End of Graph ==" << endl;
 }
@@ -227,5 +272,79 @@ vector<map<int, bool>> DisjunctiveActionLandmarkGraph::to_adj_list() const {
 int DisjunctiveActionLandmarkGraph::get_uaa_landmark_for_operator(int op_id) const {
     assert(op_to_uaa_lm.size() > op_id);
     return op_to_uaa_lm[op_id];
+}
+
+void DisjunctiveActionLandmarkGraph::order_dalms_with_relevant_past_first() {
+
+    // Mark for which landmark we need past information.
+    vector<bool> past_needed(lms.size(), false);
+    for (precondition_achiever_triple &entry : precondition_achiever_lms) {
+        past_needed[entry.preconditioned_lm] = true;
+    }
+    for (DisjunctiveActionLandmarkNode &lm : lms) {
+        for (auto ordering : lm.get_dependencies()) {
+            if (ordering.second == OrderingType::WEAK) {
+                past_needed[ordering.first] = true;
+            }
+        }
+    }
+
+    // Create the mapping by swapping out landmarks so lms with needed past information are in front.
+    unordered_map<size_t, size_t> swap_mapping;
+    size_t low = 0;
+    while (past_needed[low]) {
+        low++;
+    }
+    size_t high = last_relevant_past_dalm;
+    while(low < high) {
+        swap_mapping[low] = high;
+        swap_mapping[high] = low;
+        low++;
+        high--;
+        while (past_needed[low]) {
+            low++;
+        }
+        while (!past_needed[high]) {
+            high--;
+        }
+    }
+
+    // Do the swap.
+    for (auto &it : swap_mapping) {
+        if (it.first < it.second) {
+            DisjunctiveActionLandmarkNode tmp = lms[it.second];
+            swap(lms[it.first], lms[it.second]);
+            swap(lm_true_in_initial[it.first], lm_true_in_initial[it.second]);
+        }
+    }
+    for (auto &it : ids) {
+        auto it2 = swap_mapping.find(it.second);
+        if (it2 != swap_mapping.end()) {
+            it.second = it2->second;
+        }
+    }
+    int count=0;
+    for (DisjunctiveActionLandmarkNode &lm : lms) {
+        count++;
+        lm.swap_ids(swap_mapping);
+    }
+    unordered_map<size_t, size_t>::iterator it;
+    for (auto &entry : goal_achiever_lms) {
+        it = swap_mapping.find(entry.second);
+        if (it != swap_mapping.end()) {
+            entry.second = it->second;
+        }
+    }
+    for (auto &entry : precondition_achiever_lms) {
+        it = swap_mapping.find(entry.preconditioned_lm);
+        if (it != swap_mapping.end()) {
+            entry.preconditioned_lm = it->second;
+        }
+        it = swap_mapping.find(entry.achiever_lm);
+        if (it != swap_mapping.end())  {
+            entry.achiever_lm = it->second;
+        }
+    }
+    last_relevant_past_dalm = high;
 }
 }

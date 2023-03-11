@@ -147,7 +147,7 @@ def is_test_run():
 
 
 def get_algo_nick(revision, config_nick):
-    return "{revision}-{config_nick}".format(**locals())
+    return f"{revision}{'-' if revision else ''}{config_nick}"
 
 
 class IssueConfig(object):
@@ -255,17 +255,22 @@ class IssueExperiment(FastDownwardExperiment):
             raise ValueError(
                 "please provide either both or none of revisions and configs")
 
-        for rev in revisions:
+        if all(isinstance(rev, tuple) for rev in revisions):
+            pass
+        else:
+            revisions = [(rev, rev) for rev in revisions]
+
+        for rev, rev_nick in revisions:
             for config in configs:
                 self.add_algorithm(
-                    get_algo_nick(rev, config.nick),
+                    get_algo_nick(rev_nick, config.nick),
                     get_repo_base(),
                     rev,
                     config.component_options,
                     build_options=config.build_options,
                     driver_options=config.driver_options)
 
-        self._revisions = revisions
+        self._revisions = [rev[0] for rev in revisions]
         self._configs = configs
 
     @classmethod

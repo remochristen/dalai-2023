@@ -5,6 +5,7 @@
 
 #include <map>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 namespace landmarks {
@@ -18,7 +19,7 @@ class DisjunctiveActionLandmarkNode {
     std::map<int, OrderingType> dependencies;
 
 public:
-    const std::set<int> actions;
+    std::set<int> actions;
 
     DisjunctiveActionLandmarkNode(std::set<int> actions);
     bool overlaps_with(DisjunctiveActionLandmarkNode &other) const;
@@ -30,13 +31,14 @@ public:
     OrderingType get_dependency(int id) const;
     const std::map<int, OrderingType> &get_dependencies() const;
     bool depends_on(int id) const;
+    void swap_ids(const std::unordered_map<size_t, size_t> &swap_mapping);
 };
 
 struct precondition_achiever_triple {
     // TODO: Is a vector the correct choice for this? Depends on order.
     const std::vector<FactPair> facts;
-    const size_t achiever_lm;
-    const size_t preconditioned_lm;
+    size_t achiever_lm;
+    size_t preconditioned_lm;
 
     precondition_achiever_triple(
         const std::vector<FactPair> &facts,
@@ -52,8 +54,8 @@ class DisjunctiveActionLandmarkGraph {
     std::vector<DisjunctiveActionLandmarkNode> lms;
     size_t num_strong_orderings = 0;
     size_t num_weak_orderings = 0;
+    size_t last_relevant_past_dalm;
     bool uaa_landmarks;
-    int non_uaa_dalms;
 
     std::vector<bool> lm_true_in_initial;
     std::vector<std::pair<FactPair, size_t>> goal_achiever_lms;
@@ -104,16 +106,14 @@ public:
 
     std::vector<std::map<int, bool>> to_adj_list() const;
 
+    void order_dalms_with_relevant_past_first();
+    size_t get_last_relevant_past_id() {
+        return last_relevant_past_dalm;
+    }
     bool has_uaa_landmarks() const {
         return uaa_landmarks;
     }
     int get_uaa_landmark_for_operator(int op_id) const;
-    void set_non_uaa_dalms() {
-        non_uaa_dalms = lms.size();
-    }
-    int get_num_non_uaa_dalms() {
-        return non_uaa_dalms;
-    }
 };
 }
 

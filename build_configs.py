@@ -18,5 +18,7 @@ ipc23_debug = ["-DCMAKE_BUILD_TYPE=Debug"] + IPC23_STANDARD
 ipc23_no_lp = ipc23 + ["-DUSE_LP=NO"]
 ipc23_no_lp_debug = ipc23_debug + ["-DUSE_LP=NO"]
 
+ipc23_eager = ipc23 + ["-DPLUGIN_PLUGIN_EAGER_GREEDY_ENABLED=True"]
+
 DEFAULT = "ipc23"
 DEBUG = "ipc23_debug"
