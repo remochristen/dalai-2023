@@ -15,7 +15,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_DIR = os.environ["DOWNWARD_REPO"]
 BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
 REVISIONS = [
-    "7440c78462f7d28b6d7b67c59a46342a159156b5",
+    "474ae18ba4a88b873286d6f1d1b9fb8fa1b05419",
     "fb70f76836924538bb17717f3e44c3dea2b7cd6c"
 ]
 
