@@ -53,8 +53,8 @@ void DisjunctiveActionLandmarkStatusManager::process_state_transition(
 
     int num_landmarks = static_cast<int>(lm_graph.get_number_of_landmarks());
     utils::unused_variable(num_landmarks);
-    assert(past.size() == graph.get_last_relevant_past_id()+1);
-    assert(parent_past.size() == graph.get_last_relevant_past_id()+1);
+    assert(past.size() == (int)lm_graph.get_last_relevant_past_id()+1);
+    assert(parent_past.size() == (int)lm_graph.get_last_relevant_past_id()+1);
     assert(fut.size() == num_landmarks);
     assert(parent_fut.size() == num_landmarks);
 
