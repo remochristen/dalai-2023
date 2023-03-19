@@ -328,6 +328,10 @@ void DisjunctiveActionLandmarkGraph::order_dalms_with_relevant_past_first() {
             entry.achiever_lm = it->second;
         }
     }
-    last_relevant_past_dalm = low-1;
+    if (low > 0) {
+      last_relevant_past_dalm = low-1;
+    } else {
+      last_relevant_past_dalm = 0;
+    }
 }
 }
