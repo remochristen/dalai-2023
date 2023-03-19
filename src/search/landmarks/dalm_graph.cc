@@ -210,6 +210,7 @@ void DisjunctiveActionLandmarkGraph::dump() const {
         }
         cout << endl;
     }
+    cout << "last relevant past dalm " << last_relevant_past_dalm << endl; 
     cout << "== End of Graph ==" << endl;
 }
 
@@ -275,7 +276,6 @@ int DisjunctiveActionLandmarkGraph::get_uaa_landmark_for_operator(int op_id) con
 }
 
 void DisjunctiveActionLandmarkGraph::order_dalms_with_relevant_past_first() {
-
     // Mark for which landmark we need past information.
     vector<bool> past_needed(lms.size(), false);
     for (precondition_achiever_triple &entry : precondition_achiever_lms) {
@@ -304,7 +304,7 @@ void DisjunctiveActionLandmarkGraph::order_dalms_with_relevant_past_first() {
         while (past_needed[low]) {
             low++;
         }
-        while (!past_needed[high]) {
+        while (!past_needed[high] && high > 0) {
             high--;
         }
     }
@@ -345,6 +345,10 @@ void DisjunctiveActionLandmarkGraph::order_dalms_with_relevant_past_first() {
             entry.achiever_lm = it->second;
         }
     }
-    last_relevant_past_dalm = high;
+    if (low > 0) {
+      last_relevant_past_dalm = low-1;
+    } else {
+      last_relevant_past_dalm = 0;
+    }
 }
 }
