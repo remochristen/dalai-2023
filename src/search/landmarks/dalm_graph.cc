@@ -1,5 +1,7 @@
 #include "dalm_graph.h"
 
+#include "../utils/logging.h"
+
 #include <cassert>
 
 using namespace std;
@@ -333,5 +335,6 @@ void DisjunctiveActionLandmarkGraph::order_dalms_with_relevant_past_first() {
     } else {
       last_relevant_past_dalm = 0;
     }
+    utils::g_log << "Number of relevant past dalms: " << last_relevant_past_dalm+1 << endl;
 }
 }
