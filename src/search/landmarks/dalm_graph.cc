@@ -74,7 +74,7 @@ void DisjunctiveActionLandmarkNode::swap_ids(const unordered_map<size_t, size_t>
 }
 
 DisjunctiveActionLandmarkGraph::DisjunctiveActionLandmarkGraph(bool uaa_landmarks, const TaskProxy task_proxy)
-    : uaa_landmarks(uaa_landmarks) {
+    : last_relevant_past_dalm(0), uaa_landmarks(uaa_landmarks) {
     if (uaa_landmarks) {
         op_to_uaa_lm = vector<int>(task_proxy.get_operators().size(), -1);
     }
@@ -271,7 +271,7 @@ vector<map<int, bool>> DisjunctiveActionLandmarkGraph::to_adj_list() const {
 }
 
 int DisjunctiveActionLandmarkGraph::get_uaa_landmark_for_operator(int op_id) const {
-    assert(op_to_uaa_lm.size() > op_id);
+    assert(op_to_uaa_lm.size() > (size_t) op_id);
     return op_to_uaa_lm[op_id];
 }
 
