@@ -70,6 +70,14 @@ void DisjunctiveActionLandmarkStatusManager::progress_basic(
     int num_landmarks = static_cast<int>(lm_graph.get_number_of_landmarks());
 
     // TODO: Is there a more efficient way to do this?
+    /*
+     * We need to update the landmark information if the parent has "stronger" information
+     * (parent: only fut, child: only past/past and fut; or parent: past and fut, child: only past)
+     * and the landmark was not achieved in this transition (because otherwise the information would
+     * degenerate to "only past").
+     * In order to avoid calling count on the action set if possible, we first check for the "stronger" condition.
+     * Note that the condition can only fire if the landmark is fut in parent.
+     */
     for (int lm_id = 0; lm_id < num_landmarks; ++lm_id) {
         if (parent_fut.test(lm_id)) {
             bool parent_fut_stronger = !fut.test(lm_id);
