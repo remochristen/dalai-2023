@@ -114,9 +114,18 @@ void FactLandmarkGraphTranslatorFactory::add_uaa_landmarks(dalm_graph &graph, co
     int too_large_sets  = 0;
     // Collect for each fact which operators have it as precondition
     vector<vector<set<int>>> precondition_of(task_proxy.get_variables().size());
+    vector<vector<bool>> fact_is_relevant_for_axioms(precondition_of.size());
     for (size_t i = 0; i < precondition_of.size(); ++i) {
         precondition_of[i].resize(task_proxy.get_variables()[i].get_domain_size());
+        fact_is_relevant_for_axioms[i].resize(task_proxy.get_variables()[i].get_domain_size(), false);
     }
+
+    for (OperatorProxy axiom_proxy : task_proxy.get_axioms()) {
+        for (FactProxy cond : axiom_proxy.get_effects()[0].get_conditions()) {
+            fact_is_relevant_for_axioms[cond.get_pair().var][cond.get_pair().value] = true;
+        }
+    }
+
     for (OperatorProxy op_proxy : task_proxy.get_operators()) {
         for (FactProxy pre : op_proxy.get_preconditions()) {
             precondition_of[pre.get_pair().var][pre.get_pair().value].insert(op_proxy.get_id());
@@ -128,6 +137,7 @@ void FactLandmarkGraphTranslatorFactory::add_uaa_landmarks(dalm_graph &graph, co
         }
     }
 
+
     GoalsProxy goal = task_proxy.get_goals();
     for (OperatorProxy op_proxy : task_proxy.get_operators()) {
         vector<const set<int> *> dalm_op_sets;
@@ -136,12 +146,17 @@ void FactLandmarkGraphTranslatorFactory::add_uaa_landmarks(dalm_graph &graph, co
         int size_estimate = 0;
         /*
          * We discard a potential uaa if
+         *  - it is relevant for an axiom -> the derived variable might get used rather than the effect
          *  - it makes a goal true -> then it is useful in itself
          *  - its size exceeds a given threshold -> larger dalms are less useful and require more computational effort
          */
         bool discard = false;
         for (EffectProxy effect_proxy : op_proxy.get_effects()) {
             FactProxy effect = effect_proxy.get_fact();
+            if (fact_is_relevant_for_axioms[effect.get_pair().var][effect.get_pair().value]) {
+                discard = true;
+                break;
+            }
             for (FactProxy goal_fact : goal) {
                 if (effect == goal_fact) {
                     discard = true;
