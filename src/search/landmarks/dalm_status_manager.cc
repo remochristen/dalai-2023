@@ -71,12 +71,16 @@ void DisjunctiveActionLandmarkStatusManager::progress_basic(
 
     // TODO: Is there a more efficient way to do this?
     for (int lm_id = 0; lm_id < num_landmarks; ++lm_id) {
-        if (!parent_past.test(lm_id)) {
-            assert(parent_fut.test(lm_id));
-            if (past.test(lm_id)
-                && lm_graph.get_actions(lm_id).count(op_id) == 0) {
-                past.reset(lm_id);
-                fut.set(lm_id);
+        if (parent_fut.test(lm_id)) {
+            bool parent_fut_stronger = !fut.test(lm_id);
+            bool parent_past_stronger = (!parent_past.test(lm_id) && past.test(lm_id));
+            if ((parent_fut_stronger || parent_past_stronger) && lm_graph.get_actions(lm_id).count(op_id) == 0) {
+                if (parent_fut_stronger) {
+                    fut.set(lm_id);
+                }
+                if (parent_past_stronger) {
+                    past.reset(lm_id);
+                }
             }
         }
     }
