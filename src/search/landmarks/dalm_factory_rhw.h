@@ -17,10 +17,13 @@ class DalmFactoryRhw : public LandmarkGraphFactory {
     std::shared_ptr<DisjunctiveActionLandmarkGraph> dalm_graph;
 
     std::vector<std::vector<std::vector<int>>> operators_eff_lookup;
-    std::list<Landmark> open_landmarks;
+    std::list<Landmark *> open_landmarks;
     std::vector<std::vector<int>> disjunction_classes;
 
-    std::unordered_map<LandmarkNode *, utils::HashSet<FactPair>> forward_orders;
+    std::unordered_map<Landmark *, utils::HashSet<FactPair>> forward_orders;
+
+    std::vector<Landmark *> fact_lms;
+    std::unordered_map<Landmark *, std::pair<int,int>> flm_to_dalm;
 
     // dtg_successors[var_id][val] contains all successor values of val in the
     // domain transition graph for the variable
@@ -49,9 +52,6 @@ class DalmFactoryRhw : public LandmarkGraphFactory {
 
     std::shared_ptr<DisjunctiveActionLandmarkGraph> compute_landmark_graph(
         const std::shared_ptr<AbstractTask> &task) override;
-    void insert_gn_ordered_dalm(const std::vector<FactPair> parent,
-                                const std::set<int> &first_achievers, const std::set<int> &possible_achievers,
-                                const std::set<int> &parent_possible_achievers, bool true_in_initial);
     void approximate_lookahead_orders(const TaskProxy &task_proxy,
                                       const std::vector<std::vector<bool>> &reached,
                                       Landmark &lmp);
@@ -65,6 +65,11 @@ class DalmFactoryRhw : public LandmarkGraphFactory {
         return operators_eff_lookup[eff.var][eff.value];
     }
     void generate_operators_lookups(const TaskProxy &task_proxy);
+
+    Landmark *create_fact_and_dalm_landmark(const std::set<FactPair> &facts, const State &initial_state);
+    size_t add_first_achiever_dalm(Landmark *fact_lm, const std::set<int> &first_achievers,
+                                   const State &initial_state);
+    void add_gn_edge(Landmark *parent, Landmark *child);
 public:
     explicit DalmFactoryRhw(const plugins::Options &opts);
 };
