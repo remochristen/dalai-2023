@@ -707,6 +707,7 @@ fast_downward_plugin(
     NAME LANDMARKS
     HELP "Plugin containing the code to reason with landmarks"
     SOURCES
+        landmarks/dalm_factory_reasonable_orders_hps
     	landmarks/dalm_factory_rhw
         landmarks/dalm_graph
         landmarks/dalm_graph_factory

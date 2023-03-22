@@ -392,7 +392,17 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
     for (Landmark *lm : fact_lms) {
         delete lm;
     }
-    dalm_graph->dump_dot();
+
+    utils::g_log << "Landmark graph of initial state contains "
+                 << dalm_graph->get_number_of_landmarks() << " landmarks." << endl;
+    utils::g_log << "Landmark graph of initial state contains "
+                 << dalm_graph->get_number_of_orderings()
+                 << " orderings of which "
+                 << dalm_graph->get_number_of_strong_orderings()
+                 << " are strong and "
+                 << dalm_graph->get_number_of_weak_orderings()
+                 << " are weak." << endl;
+
     return dalm_graph;
 }
 
