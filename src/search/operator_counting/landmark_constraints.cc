@@ -152,15 +152,14 @@ bool LandmarkConstraints::update_cycle_constraints(const State &ancestor_state,
     if (cycle_generator == CycleGenerator::JOHNSON) {
         assert(!cycles.empty());
         for (int i = 0; i < num_cycles; ++i) {
-            if (all_of(cycles[i].begin(), cycles[i].end(), [&](int id) {
-                return lm_status_manager->get_landmark_status(ancestor_state, id)
-                    == landmarks::FUTURE;
-            })) {
-                lp_solver.set_constraint_lower_bound(
-                    num_landmarks + i, cycles[i].size() + 1.0);
-            } else {
-                lp_solver.set_constraint_lower_bound(num_landmarks + i, 0);
-            }
+            bool cycle_active = all_of(
+                cycles[i].begin(), cycles[i].end(), [&](int id) {
+                    return lm_status_manager->get_landmark_status(
+                        ancestor_state, id) == landmarks::FUTURE;
+                });
+            double lower_bound = cycle_active ? cycles[i].size() + 1.0 : 0.0;
+            lp_solver.set_constraint_lower_bound(
+                num_landmarks + i, lower_bound);
         }
     } else {
         utils::g_log << "Only JOHNSON cycle generation implemented yet."
