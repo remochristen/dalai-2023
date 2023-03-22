@@ -18,10 +18,9 @@ enum class CycleGenerator {
     NONE,
     JOHNSON,
     FLOYD_WARSHALL,
-    DEPTH_FIRST,
+    //DEPTH_FIRST,
 };
 
-using AdjacencyList = std::vector<std::vector<int>>;
 
 class LandmarkConstraints : public ConstraintGenerator {
     CycleGenerator cycle_generator;
@@ -50,8 +49,8 @@ class LandmarkConstraints : public ConstraintGenerator {
                                      lp::LPSolver &lp_solver);
     bool update_cycle_constraints(const State &ancestor_state,
                                   lp::LPSolver &lp_solver);
-    //void add_constraints_for_all_cycles(const State &ancestor_state,
-    //                                    lp::LPSolver &lp_solver);
+    bool add_cycle_constraints_implicit_hitting_set_approach(
+        const State &ancestor_state, lp::LPSolver &lp_solver);
 
 public:
     LandmarkConstraints(

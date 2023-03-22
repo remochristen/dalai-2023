@@ -97,7 +97,7 @@ public:
     size_t get_number_of_weak_orderings() const {
         return num_weak_orderings;
     }
-    const std::set<int> &get_actions(int id);
+    const std::set<int> &get_actions(int id) const;
     const std::map<int, OrderingType> &get_dependencies(int id) const;
     OrderingType get_ordering_type(int from, int to);
     void dump() const;

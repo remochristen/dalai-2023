@@ -192,7 +192,7 @@ OrderingType DisjunctiveActionLandmarkGraph::get_ordering_type(
     return lms[to].get_dependency(from);
 }
 
-const set<int> &DisjunctiveActionLandmarkGraph::get_actions(int id) {
+const set<int> &DisjunctiveActionLandmarkGraph::get_actions(int id) const {
     assert(0 <= id && id < static_cast<int>(lms.size()));
     return lms[id].actions;
 }

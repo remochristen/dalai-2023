@@ -1,6 +1,9 @@
 #include "landmark_constraints.h"
 
+
 #include "../algorithms/johnson_cycle_detection.h"
+#include "../landmarks/cycle_oracle.h"
+#include "../landmarks/floyd_warshall_oracle.h"
 #include "../landmarks/dalm_graph.h"
 #include "../landmarks/dalm_status_manager.h"
 #include "../plugins/plugin.h"
@@ -8,21 +11,54 @@
 using namespace landmarks;
 using namespace std;
 
+using AdjacencyList = std::vector<std::vector<int>>;
+using TypedAdjacencyList = std::vector<std::unordered_map<int, bool>>;
+
 namespace operator_counting {
 static AdjacencyList compute_adj_list(
-    const DisjunctiveActionLandmarkGraph &lm_graph,
-    const DisjunctiveActionLandmarkStatusManager &/*lm_status_manager*/) {
-    int num_lms = static_cast<int>(lm_graph.get_number_of_landmarks());
+    const shared_ptr<DisjunctiveActionLandmarkGraph> &lm_graph) {
+    int num_lms = static_cast<int>(lm_graph->get_number_of_landmarks());
     AdjacencyList adj(num_lms, vector<int>{});
     for (int id = 0; id < num_lms; ++id) {
-        for (auto &parent : lm_graph.get_dependencies(id)) {
-            if (!lm_graph.is_true_in_initial(parent.first)) {
+        for (auto &parent : lm_graph->get_dependencies(id)) {
+            if (!lm_graph->is_true_in_initial(parent.first)) {
                 adj[parent.first].push_back(id);
             }
         }
     }
     return adj;
 }
+
+static TypedAdjacencyList compute_typed_adj_list(
+    const State &ancestor_state,
+    const shared_ptr<DisjunctiveActionLandmarkGraph> &lm_graph,
+    const shared_ptr<DisjunctiveActionLandmarkStatusManager> &lm_status_manager) {
+    int num_lms = static_cast<int>(lm_graph->get_number_of_landmarks());
+    TypedAdjacencyList adj(num_lms, unordered_map<int, bool>{});
+    for (int id = 0; id < num_lms; ++id) {
+        for (auto &parent : lm_graph->get_dependencies(id)) {
+            if (lm_status_manager->get_landmark_status(
+                ancestor_state, parent.first) == FUTURE) {
+                adj[parent.first][id] = parent.second == OrderingType::STRONG;
+            }
+        }
+    }
+    return adj;
+}
+
+static vector<float> compute_landmark_weights(
+    const shared_ptr<DisjunctiveActionLandmarkGraph> &lm_graph,
+    const vector<double> &counts) {
+    size_t n = lm_graph->get_number_of_landmarks();
+    vector<float> weights(n, 0);
+    for (size_t i = 0; i < n; ++i) {
+        for (int op : lm_graph->get_actions(i)) {
+            weights[i] += counts[op];
+        }
+    }
+    return weights;
+}
+
 
 LandmarkConstraints::LandmarkConstraints(
     const plugins::Options &opts,
@@ -50,7 +86,8 @@ void LandmarkConstraints::add_landmark_constraints(
 void LandmarkConstraints::add_johnson_cycle_constraints(
     named_vector::NamedVector<lp::LPConstraint> &constraints,
     double infinity) {
-    AdjacencyList adj = compute_adj_list(*lm_graph, *lm_status_manager);
+    assert(cycle_generator == CycleGenerator::JOHNSON);
+    AdjacencyList adj = compute_adj_list(lm_graph);
     for (auto &list : adj) {
         sort(list.begin(), list.end());
     }
@@ -144,8 +181,8 @@ bool LandmarkConstraints::update_landmark_constraints(
     return false;
 }
 
-bool LandmarkConstraints::update_cycle_constraints(const State &ancestor_state,
-                                                   lp::LPSolver &lp_solver) {
+bool LandmarkConstraints::update_cycle_constraints(
+    const State &ancestor_state, lp::LPSolver &lp_solver) {
     assert(cycle_generator != CycleGenerator::NONE);
     int num_landmarks = static_cast<int>(lm_graph->get_number_of_landmarks());
     int num_cycles = static_cast<int>(cycles.size());
@@ -161,38 +198,38 @@ bool LandmarkConstraints::update_cycle_constraints(const State &ancestor_state,
             lp_solver.set_constraint_lower_bound(
                 num_landmarks + i, lower_bound);
         }
+        return false;
     } else {
-        utils::g_log << "Only JOHNSON cycle generation implemented yet."
-                     << endl;
+        return add_cycle_constraints_implicit_hitting_set_approach(
+            ancestor_state, lp_solver);
     }
-    return false;
 }
 
-//void LandmarkConstraints::add_constraints_for_all_cycles(
-//    const State &ancestor_state, lp::LPSolver &lp_solver) {
-//    AdjacencyList adj =
-//        compute_adj_list(*lm_graph, *lm_status_manager, ancestor_state);
-//    for (auto &list : adj) {
-//        sort(list.begin(), list.end());
-//    }
-//    //cycles = johnson_cycles::compute_elementary_cycles(adj);
-//    //utils::g_log << "Johnson's algorithm found " << cycles.size()
-//    //             << " cycles in the initial state." << endl;
-//    //
-//    //if (cycles.empty()) {
-//    //    utils::g_log << "Turning off cycle heuristic." << endl;
-//    //    cycle_generator = CycleGenerator::NONE;
-//    //    return;
-//    //}
-//
-//    vector<lp::LPConstraint> constraints{};
-//    constraints.reserve(cycles.size());
-//    for (const vector<int> &cycle : cycles) {
-//        constraints.push_back(
-//            compute_constraint(cycle, lp_solver.get_infinity()));
-//    }
-//    lp_solver.add_temporary_constraints(constraints);
-//}
+bool LandmarkConstraints::add_cycle_constraints_implicit_hitting_set_approach(
+    const State &ancestor_state, lp::LPSolver &lp_solver) {
+    assert(cycle_generator == CycleGenerator::FLOYD_WARSHALL);
+    TypedAdjacencyList adj = compute_typed_adj_list(
+        ancestor_state, lm_graph, lm_status_manager);
+    shared_ptr<CycleOracle> oracle =
+        make_shared<FloydWarshallOracle>(adj, !strong);
+
+    vector<int> cycle;
+    for (size_t iteration = 0; /* TODO: max iterations? */; ++iteration) {
+        lp_solver.solve();
+        if (!lp_solver.has_optimal_solution()) {
+            return true;
+        }
+        vector<float> lm_count =
+            compute_landmark_weights(lm_graph, lp_solver.extract_solution());
+        cycle = oracle->find_cycle(lm_count);
+        if (cycle.empty()) {
+            return false;
+        }
+        lp::LPConstraint constraint =
+            compute_constraint(cycle, lp_solver.get_infinity());
+        lp_solver.add_temporary_constraints({constraint});
+    }
+}
 
 void LandmarkConstraints::add_options_to_feature(plugins::Feature &feature) {
     feature.add_option<CycleGenerator>(
@@ -210,6 +247,6 @@ static plugins::TypedEnumPlugin<CycleGenerator> _enum_plugin({
     {"none", "add no cycle constraints"},
     {"johnson", "add all elementary cycles found using Johnson's algorithm"},
     {"floyd_warshall", "use oracle approach with Floyd-Warshall's algorithm"},
-    {"depth_first", "use oracle approach with DFS search"}
+    //{"depth_first", "use oracle approach with DFS search"}
 });
 }

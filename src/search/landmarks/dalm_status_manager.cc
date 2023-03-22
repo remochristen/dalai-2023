@@ -16,11 +16,13 @@ DisjunctiveActionLandmarkStatusManager::DisjunctiveActionLandmarkStatusManager(
       future_lms(vector<bool>(graph.get_number_of_landmarks(), false)) {
 }
 
-BitsetView DisjunctiveActionLandmarkStatusManager::get_past_landmarks(const State &state) {
+BitsetView DisjunctiveActionLandmarkStatusManager::get_past_landmarks(
+    const State &state) {
     return past_lms[state];
 }
 
-BitsetView DisjunctiveActionLandmarkStatusManager::get_future_landmarks(const State &state) {
+BitsetView DisjunctiveActionLandmarkStatusManager::get_future_landmarks(
+    const State &state) {
     return future_lms[state];
 }
 

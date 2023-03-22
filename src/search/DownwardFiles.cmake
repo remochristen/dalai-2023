@@ -739,12 +739,12 @@ fast_downward_plugin(
     NAME CYCLIC_LANDMARK_HEURISTIC
     HELP "The cyclic landmark heuristic"
     SOURCES
-#        algorithms/floyd_warshall
+        algorithms/floyd_warshall
         algorithms/johnson_cycle_detection
-#        landmarks/cycle_oracle
+        landmarks/cycle_oracle
         landmarks/cyclic_landmark_heuristic
 #        landmarks/depth_first_oracle
-#        landmarks/floyd_warshall_oracle
+        landmarks/floyd_warshall_oracle
         operator_counting/constraint_generator
         operator_counting/landmark_constraints
     DEPENDS LANDMARKS LP_SOLVER
