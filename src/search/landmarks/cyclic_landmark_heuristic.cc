@@ -103,7 +103,7 @@ public:
 
         lp::add_lp_solver_option_to_feature(*this);
         DisjunctiveActionLandmarkHeuristic::add_options_to_feature(*this);
-        // TODO: LandmarkConstraints::add_options_to_feature(*this);
+        operator_counting::LandmarkConstraints::add_options_to_feature(*this);
     }
 };
 

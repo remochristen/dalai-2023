@@ -740,7 +740,7 @@ fast_downward_plugin(
     HELP "The cyclic landmark heuristic"
     SOURCES
 #        algorithms/floyd_warshall
-#        algorithms/johnson_cycle_detection
+        algorithms/johnson_cycle_detection
 #        landmarks/cycle_oracle
         landmarks/cyclic_landmark_heuristic
 #        landmarks/depth_first_oracle
