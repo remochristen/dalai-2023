@@ -54,6 +54,7 @@ class DisjunctiveActionLandmarkGraph {
     size_t num_weak_orderings = 0;
 
     std::vector<bool> lm_true_in_initial;
+    std::vector<bool> lm_initially_fut;
     std::vector<std::pair<FactPair, size_t>> goal_achiever_lms;
     std::vector<precondition_achiever_triple> precondition_achiever_lms;
 
@@ -66,6 +67,9 @@ public:
 
     bool is_true_in_initial(int id) const {
         return lm_true_in_initial[id];
+    }
+    bool is_initially_fut(int id) const {
+        return lm_initially_fut[id];
     }
     void mark_lm_goal_achiever(const FactPair &fact_pair, size_t lm);
     void mark_lm_precondition_achiever (
@@ -94,7 +98,7 @@ public:
         return num_weak_orderings;
     }
     const std::set<int> &get_actions(int id);
-    const std::map<int, OrderingType> &get_dependencies(int id);
+    const std::map<int, OrderingType> &get_dependencies(int id) const;
     OrderingType get_ordering_type(int from, int to);
     void dump() const;
     void dump_dot() const;
