@@ -3,6 +3,7 @@
 
 #include "../algorithms/johnson_cycle_detection.h"
 #include "../landmarks/cycle_oracle.h"
+#include "../landmarks/depth_first_oracle.h"
 #include "../landmarks/floyd_warshall_oracle.h"
 #include "../landmarks/dalm_graph.h"
 #include "../landmarks/dalm_status_manager.h"
@@ -39,7 +40,7 @@ static TypedAdjacencyList compute_typed_adj_list(
         for (auto &parent : lm_graph->get_dependencies(id)) {
             if (lm_status_manager->get_landmark_status(
                 ancestor_state, parent.first) == FUTURE) {
-                adj[parent.first][id] = parent.second == OrderingType::STRONG;
+                adj[parent.first][id] = parent.second == OrderingType::WEAK;
             }
         }
     }
@@ -207,11 +208,19 @@ bool LandmarkConstraints::update_cycle_constraints(
 
 bool LandmarkConstraints::add_cycle_constraints_implicit_hitting_set_approach(
     const State &ancestor_state, lp::LPSolver &lp_solver) {
-    assert(cycle_generator == CycleGenerator::FLOYD_WARSHALL);
     TypedAdjacencyList adj = compute_typed_adj_list(
         ancestor_state, lm_graph, lm_status_manager);
-    shared_ptr<CycleOracle> oracle =
-        make_shared<FloydWarshallOracle>(adj, !strong);
+    shared_ptr<CycleOracle> oracle;
+    switch (cycle_generator) {
+    case CycleGenerator::FLOYD_WARSHALL:
+        oracle = make_shared<FloydWarshallOracle>(adj, !strong);
+        break;
+    case CycleGenerator::DEPTH_FIRST:
+        oracle = make_shared<DepthFirstOracle>(adj, !strong);
+        break;
+    default:
+        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
+    }
 
     vector<int> cycle;
     for (size_t iteration = 0; /* TODO: max iterations? */; ++iteration) {
@@ -247,6 +256,6 @@ static plugins::TypedEnumPlugin<CycleGenerator> _enum_plugin({
     {"none", "add no cycle constraints"},
     {"johnson", "add all elementary cycles found using Johnson's algorithm"},
     {"floyd_warshall", "use oracle approach with Floyd-Warshall's algorithm"},
-    //{"depth_first", "use oracle approach with DFS search"}
+    {"depth_first", "use oracle approach with DFS search"}
 });
 }

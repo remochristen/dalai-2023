@@ -743,7 +743,7 @@ fast_downward_plugin(
         algorithms/johnson_cycle_detection
         landmarks/cycle_oracle
         landmarks/cyclic_landmark_heuristic
-#        landmarks/depth_first_oracle
+        landmarks/depth_first_oracle
         landmarks/floyd_warshall_oracle
         operator_counting/constraint_generator
         operator_counting/landmark_constraints

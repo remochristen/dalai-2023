@@ -18,7 +18,7 @@ enum class CycleGenerator {
     NONE,
     JOHNSON,
     FLOYD_WARSHALL,
-    //DEPTH_FIRST,
+    DEPTH_FIRST,
 };
 
 
