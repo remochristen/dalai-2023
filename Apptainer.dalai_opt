@@ -41,7 +41,7 @@ Stage: build
     ## Build the planner.
     cd /planner
     pypy3 build.py "ipc23_opt" -j4
-    strip --strip-all /planner/builds/release/bin/downward
+    strip --strip-all /planner/builds/ipc23_opt/bin/downward
 
 
 # Stage 2: Run the planner
@@ -71,7 +71,7 @@ Stage: run
     PROBLEMFILE="$2"
     PLANFILE="$3"
 
-    pypy3 /fast-downward.py \
+    pypy3 /planner/fast-downward.py \
         --build "ipc23_opt" \
         --plan-file "$PLANFILE" \
         --alias "dalai-opt-2023" \
