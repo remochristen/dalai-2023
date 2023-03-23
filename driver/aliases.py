@@ -157,7 +157,7 @@ ALIASES["dalai-agl-2023"] = [
 
 ALIASES["dalai-opt-2023"] = [
     "--search",
-    "astar(cyclic(lm_factory=fact_translator(lm_reasonable_orders_hps(lm_rhw()),uaa_landmarks=true),"
+    "astar(cyclic(lm_factory=fact_translator(lm_reasonable_orders_hps(lm_rhw())),"
     "cycle_generator=johnson,additional_constraint_generators=[lmcut_constraints()]))",
 ]
 
