@@ -84,27 +84,28 @@ DisjunctiveActionLandmarkGraph::DisjunctiveActionLandmarkGraph(bool uaa_landmark
 
 size_t DisjunctiveActionLandmarkGraph::add_node(const set<int> &actions, bool true_in_initial, int op_id) {
     auto it = ids.find(actions);
+    size_t id;
     if (it == ids.end()) {
-        size_t id = ids.size();
+        id = ids.size();
         ids[actions] = id;
         lms.emplace_back(actions);
         lm_true_in_initial.push_back(true_in_initial);
+        lm_initially_fut.push_back(!true_in_initial);
         if (uaa_landmarks && op_id >= 0) {
             op_to_uaa_lm[op_id] = id;
         }
         return id;
+    } else {
+        /*
+          If several fact landmarks lead to the same dalm, then it is true
+          in initial if at least one is true, and initially fut if at least
+          one is not true.
+        */
+        id = it->second;
+        lm_true_in_initial[id] = lm_true_in_initial[id] || true_in_initial;
+        lm_initially_fut[id] = lm_initially_fut[id] || !true_in_initial;
     }
-    /*
-     * If several fact landmarks lead to the same dalm, then it is true in initial
-     * only if *all* fact landmarks are true in the initial state.
-     */
-    if (!true_in_initial) {
-        lm_true_in_initial[it->second] = false;
-    }
-    if (uaa_landmarks && op_id >= 0) {
-        op_to_uaa_lm[op_id] = it->second;
-    }
-    return it->second;
+    return id;
 }
 
 void DisjunctiveActionLandmarkGraph::add_edge(
@@ -250,13 +251,13 @@ OrderingType DisjunctiveActionLandmarkGraph::get_ordering_type(
     return lms[to].get_dependency(from);
 }
 
-const set<int> &DisjunctiveActionLandmarkGraph::get_actions(int id) {
+const set<int> &DisjunctiveActionLandmarkGraph::get_actions(int id) const {
     assert(0 <= id && id < static_cast<int>(lms.size()));
     return lms[id].actions;
 }
 
 const map<int, OrderingType> &DisjunctiveActionLandmarkGraph::get_dependencies(
-    int id) {
+    int id) const {
     assert(0 <= id && id < static_cast<int>(lms.size()));
     return lms[id].get_dependencies();
 }

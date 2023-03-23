@@ -17,11 +17,13 @@ DisjunctiveActionLandmarkStatusManager::DisjunctiveActionLandmarkStatusManager(
       future_lms(vector<bool>(graph.get_number_of_landmarks(), false)) {
 }
 
-BitsetView DisjunctiveActionLandmarkStatusManager::get_past_landmarks(const State &state) {
+BitsetView DisjunctiveActionLandmarkStatusManager::get_past_landmarks(
+    const State &state) {
     return past_lms[state];
 }
 
-BitsetView DisjunctiveActionLandmarkStatusManager::get_future_landmarks(const State &state) {
+BitsetView DisjunctiveActionLandmarkStatusManager::get_future_landmarks(
+    const State &state) {
     return future_lms[state];
 }
 
@@ -29,14 +31,15 @@ void DisjunctiveActionLandmarkStatusManager::process_initial_state(
     const State &initial_state, utils::LogProxy &/*log*/) {
     BitsetView past = get_past_landmarks(initial_state);
     BitsetView future = get_future_landmarks(initial_state);
-    past.reset();
-    future.set();
-    for (size_t id = 0; id < lm_graph.get_number_of_landmarks(); ++id) {
-        if (lm_graph.is_true_in_initial(id)) {
-            if ((int) id < past.size()) {
-                past.set(static_cast<int>(id));
-            }
-            future.reset(static_cast<int>(id));
+    int num_landmarks = static_cast<int>(lm_graph.get_number_of_landmarks());
+    for (int id = 0; id < num_landmarks; ++id) {
+        assert(lm_graph.is_true_in_initial(id)
+               || lm_graph.is_initially_fut(id));
+        if ((int) id < past.size() && !lm_graph.is_true_in_initial(id)) {
+            past.reset(id);
+        }
+        if (lm_graph.is_initially_fut(id)) {
+            future.set(id);
         }
     }
     progress_weak(past, future);
