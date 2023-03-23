@@ -78,6 +78,7 @@ void DisjunctiveActionLandmarkStatusManager::progress_basic(
     utils::unused_variable(parent_fut);
     int num_landmarks = static_cast<int>(lm_graph.get_number_of_landmarks());
 
+    // TODO: Is there a more efficient way to do this?
     for (int lm_id = 0; lm_id < num_landmarks; ++lm_id) {
         /*
          * We need to update the landmark information if the parent has "stronger" information
