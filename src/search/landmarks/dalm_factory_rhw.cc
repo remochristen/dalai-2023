@@ -276,36 +276,66 @@ void DalmFactoryRhw::compute_disjunctive_preconditions(
     }
 }
 
-Landmark *DalmFactoryRhw::create_fact_and_dalm_landmark(const set<FactPair> &facts, const State &initial_state) {
+int DalmFactoryRhw::add_landmark(const set<FactPair> &facts, const State &initial_state, int child_index) {
+    bool is_derived = false;
     vector<FactPair> fact_lm_vec;
     set<int> dalm_ops = {};
     for (const FactPair fact : facts) {
         fact_lm_vec.push_back(fact);
-        const vector<int> &achieving_ops = get_operators_including_eff(fact);
-        dalm_ops.insert(achieving_ops.begin(), achieving_ops.end());
+        for (int op_id  :  get_operators_including_eff(fact)) {
+            if (op_id < 0) {
+                is_derived = true;
+                break;
+            }
+            dalm_ops.insert(op_id);
+        }
     }
-    Landmark *lm = new Landmark(fact_lm_vec, (fact_lm_vec.size() > 1), false);
-    fact_lms.push_back(lm);
-    size_t dalm_id = dalm_graph->add_node(dalm_ops,
-                                          lm->is_true_in_state(initial_state));
-    flm_to_dalm.insert(make_pair(lm, make_pair(dalm_id, -1)));
-    return lm;
+    Landmark fact_landmark(fact_lm_vec, (fact_lm_vec.size() > 1), false);
+    int dalm_id = -1;
+    if (!is_derived) {
+        dalm_id = dalm_graph->add_node(dalm_ops,fact_landmark.is_true_in_state(initial_state));
+    }
+    landmarks.emplace_back(move(fact_landmark), dalm_id, -1, is_derived, child_index);
+    return landmarks.size()-1;
 }
 
-size_t DalmFactoryRhw::add_first_achiever_dalm(Landmark *fact_lm, const set<int> &first_achievers,
+void DalmFactoryRhw::add_first_achiever_dalm(int index, const set<int> &first_achievers,
                                                const State &initial_state) {
-    size_t ret = dalm_graph->add_node(first_achievers,
-                                      fact_lm->is_true_in_state(initial_state));
-    flm_to_dalm[fact_lm].second = ret;
-    return ret;
+    if (!landmarks[index].is_derived) {
+        landmarks[index].first_achiever_dalm =
+                dalm_graph->add_node(first_achievers, landmarks[index].fact_landmark.is_true_in_state(initial_state));
+    }
 }
 
-void DalmFactoryRhw::add_gn_edge(Landmark *parent, Landmark *child) {
-    dalm_graph->add_edge(flm_to_dalm[parent].first, flm_to_dalm[child].first, true);
-    dalm_graph->add_edge(flm_to_dalm[parent].first, flm_to_dalm[child].second, true );
-    dalm_graph->mark_lm_precondition_achiever(parent->facts,
-                                              flm_to_dalm[parent].first,
-                                              flm_to_dalm[child].second);
+void DalmFactoryRhw::add_gn_edge(int parent_index, int child_index) {
+    if (landmarks[parent_index].is_derived) {
+        return;
+    }
+    while (landmarks[child_index].is_derived) {
+        child_index = landmarks[child_index].child_index;
+        if (child_index < 0) {
+            return;
+        }
+    }
+    dalm_graph->add_edge(landmarks[parent_index].possible_achiever_dalm,
+                         landmarks[child_index].possible_achiever_dalm, true);
+    dalm_graph->add_edge(landmarks[parent_index].possible_achiever_dalm,
+                         landmarks[child_index].first_achiever_dalm, true);
+    dalm_graph->mark_lm_precondition_achiever(landmarks[parent_index].fact_landmark.facts,
+                                              landmarks[parent_index].possible_achiever_dalm,
+                                              landmarks[child_index].first_achiever_dalm);
+}
+
+void DalmFactoryRhw::add_nat_edge(int parent_index, int child_index) {
+    if (landmarks[parent_index].is_derived) {
+        return;
+    }
+    while (landmarks[child_index].is_derived) {
+        child_index = landmarks[child_index].child_index;
+        if (child_index < 0) {
+            return;
+        }
+    }
 }
 
 std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark_graph(
@@ -323,17 +353,21 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
 
     for (FactProxy goal : task_proxy.get_goals()) {
         set<FactPair> lm_set = {goal.get_pair()};
-        Landmark *landmark = create_fact_and_dalm_landmark(lm_set, initial_state);
-        dalm_graph->mark_lm_goal_achiever(goal.get_pair(), flm_to_dalm[landmark].first);
-        open_landmarks.push_back(landmark);
+        int lm_index = add_landmark(lm_set, initial_state, -1);
+        int dalm_id = landmarks[lm_index].possible_achiever_dalm;
+        if (dalm_id >= 0) {
+            dalm_graph->mark_lm_goal_achiever(goal.get_pair(), dalm_id);
+        }
+        open_landmarks.push_back(lm_index);
     }
 
     while (!open_landmarks.empty()) {
-        Landmark *landmark = open_landmarks.front();
+        int landmark_index = open_landmarks.front();
+        Landmark &fact_landmark = landmarks[landmark_index].fact_landmark;
         open_landmarks.pop_front();
-        assert(forward_orders[landmark].empty());
+        assert(forward_orders[landmark_index].empty());
 
-        if (!landmark->is_true_in_state(initial_state)) {
+        if (!fact_landmark.is_true_in_state(initial_state)) {
             /*
               Backchain from *landmark* and compute greedy necessary
               predecessors.
@@ -342,18 +376,18 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
             */
             vector<int> excluded_op_ids;
             vector<vector<bool>> reached =
-                    exploration.compute_relaxed_reachability(landmark->facts, excluded_op_ids);
+                    exploration.compute_relaxed_reachability(fact_landmark.facts, excluded_op_ids);
 
             set<int> first_achievers;
-            for (const FactPair &lm_fact : landmark->facts) {
+            for (const FactPair &lm_fact : fact_landmark.facts) {
                 const vector<int> &op_ids = get_operators_including_eff(lm_fact);
                 for (int op_or_axiom_id : op_ids) {
-                    if (possibly_reaches_lm(get_operator_or_axiom(task_proxy, op_or_axiom_id), reached, *landmark)) {
+                    if (possibly_reaches_lm(get_operator_or_axiom(task_proxy, op_or_axiom_id), reached, fact_landmark)) {
                         first_achievers.insert(op_or_axiom_id);
                     }
                 }
             }
-            add_first_achiever_dalm(landmark, first_achievers, initial_state);
+            add_first_achiever_dalm(landmark_index, first_achievers, initial_state);
             /*
               Use this information to determine all operators that can
               possibly achieve *landmark* for the first time, and collect
@@ -361,37 +395,36 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
               (if there are any).
             */
             unordered_map<int, int> shared_pre;
-            compute_shared_preconditions(task_proxy, shared_pre, first_achievers, *landmark);
+            compute_shared_preconditions(task_proxy, shared_pre, first_achievers, fact_landmark);
             /*
               All such shared preconditions are landmarks, and greedy
               necessary predecessors of *landmark*.
             */
             for (const auto &pre : shared_pre) {
                 set<FactPair> pre_set({FactPair(pre.first, pre.second)});
-                Landmark *parent = create_fact_and_dalm_landmark(pre_set, initial_state);
-                add_gn_edge(parent, landmark);
-                open_landmarks.push_back(parent);
+                int new_lm_index = add_landmark(pre_set, initial_state, landmark_index);
+                add_gn_edge(new_lm_index, landmark_index);
+                open_landmarks.push_back(new_lm_index);
             }
             // Extract additional orders from the relaxed planning graph and DTG.
-            approximate_lookahead_orders(task_proxy, reached, *landmark);
+            approximate_lookahead_orders(task_proxy, reached, landmark_index);
 
             // Process achieving operators again to find disjunctive LMs
             vector<set<FactPair>> disjunctive_pre;
             compute_disjunctive_preconditions(
-                    task_proxy, disjunctive_pre, first_achievers, *landmark);
-            for (const auto &preconditions : disjunctive_pre)
+                    task_proxy, disjunctive_pre, first_achievers, fact_landmark);
+            for (const auto &preconditions : disjunctive_pre) {
                 // We don't want disjunctive LMs to get too big.
                 if (preconditions.size() < 5) { // TODO make this an adjustable option
-                    Landmark *parent = create_fact_and_dalm_landmark(preconditions, initial_state);
-                    add_gn_edge(parent, landmark);
-                    open_landmarks.push_back(parent);
+                    int new_lm_index = add_landmark(preconditions, initial_state, landmark_index);
+                    add_gn_edge(new_lm_index, landmark_index);
+                    open_landmarks.push_back(new_lm_index);
                 }
+            }
+            open_landmarks.pop_front();
         }
     }
     add_lm_forward_orders();
-    for (Landmark *lm : fact_lms) {
-        delete lm;
-    }
 
     utils::g_log << "Landmark graph of initial state contains "
                  << dalm_graph->get_number_of_landmarks() << " landmarks." << endl;
@@ -403,11 +436,15 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
                  << dalm_graph->get_number_of_weak_orderings()
                  << " are weak." << endl;
 
+    dalm_graph->dump();
+
     return dalm_graph;
 }
 
 void DalmFactoryRhw::approximate_lookahead_orders(
-    const TaskProxy &task_proxy, const vector<vector<bool>> &reached, Landmark &landmark) {
+    const TaskProxy &task_proxy, const vector<vector<bool>> &reached,
+    int landmark_index) {
+    Landmark &landmark = landmarks[landmark_index].fact_landmark;
     /*
       Find all var-val pairs that can only be reached after the landmark
       (according to relaxed plan graph as captured in reached).
@@ -416,7 +453,7 @@ void DalmFactoryRhw::approximate_lookahead_orders(
       at the moment we don't know which of these var-val pairs will be LMs).
     */
     VariablesProxy variables = task_proxy.get_variables();
-    find_forward_orders(variables, reached, landmark);
+    find_forward_orders(variables, reached, landmark_index);
 
     /*
       Use domain transition graphs to find further orders. Only possible
@@ -453,15 +490,9 @@ void DalmFactoryRhw::approximate_lookahead_orders(
             if (!domain_connectivity(initial_state, lm_fact, exclude)) {
                 //    found_simple_lm_and_order(FactPair(lm_fact.var, value), landmark, EdgeType::NATURAL);
                 set<FactPair> new_lm_fact = {FactPair(lm_fact.var, value)};
-                Landmark *ptr = create_fact_and_dalm_landmark(new_lm_fact, initial_state);
-                size_t parent_pa = flm_to_dalm[ptr].first;
-                size_t child_pa = flm_to_dalm[&landmark].first;
-                size_t child_fa = flm_to_dalm[&landmark].second;
-                dalm_graph->add_edge(parent_pa, child_pa, true);
-                dalm_graph->add_edge(parent_pa, child_fa, true);
-
-                // TODO: this was not done in original rhw - why not?
-                open_landmarks.push_back(ptr);
+                int new_lm_index = add_landmark(new_lm_fact, initial_state, landmark_index);
+                add_nat_edge(new_lm_index, landmark_index);
+                open_landmarks.push_back(new_lm_index); // TODO: the original code did not emplace the found landmark, why?
             }
         }
 }
@@ -505,57 +536,74 @@ bool DalmFactoryRhw::domain_connectivity(const State &initial_state,
 
 void DalmFactoryRhw::find_forward_orders(const VariablesProxy &variables,
                                                  const vector<vector<bool>> &reached,
-                                                 Landmark &landmark) {
+                                                 int landmark_index) {
     /*
       landmark is ordered before any var-val pair that cannot be reached before
       landmark according to relaxed planning graph (as captured in reached).
       These orders are saved in the node member variable "forward_orders".
     */
-    for (VariableProxy var: variables)
+    cout << "finding forward orders" << endl;
+    for (VariableProxy var: variables) {
         for (int value = 0; value < var.get_domain_size(); ++value) {
+            cout << "value: " << value << endl;
             if (reached[var.get_id()][value])
                 continue;
             const FactPair fact(var.get_id(), value);
 
+            cout << "fact: " << fact.var << " " << fact.value << endl;
             bool insert = true;
-            for (const FactPair &lm_fact: landmark.facts) {
+            for (const FactPair &lm_fact: landmarks[landmark_index].fact_landmark.facts) {
+                cout << "SDFSDFSD" << endl;
+                cout << "lm_fact: " << lm_fact.var << " " << lm_fact.value << endl;
                 if (fact != lm_fact) {
+                    cout << "inequal" << endl;
                     // Make sure there is no operator that reaches both lm and (var, value) at the same time
                     bool intersection_empty = true;
                     const vector<int> &reach_fact =
                             get_operators_including_eff(fact);
                     const vector<int> &reach_lm =
                             get_operators_including_eff(lm_fact);
-                    for (size_t j = 0; j < reach_fact.size() && intersection_empty; ++j)
+                    cout << "starting loop" << endl;
+                    for (size_t j = 0; j < reach_fact.size() && intersection_empty; ++j) {
+                        cout << "j: " << j << endl;
                         for (size_t k = 0; k < reach_lm.size()
-                                           && intersection_empty; ++k)
-                            if (reach_fact[j] == reach_lm[k])
+                                           && intersection_empty; ++k) {
+                            cout << "k: " << k << endl;
+                            if (reach_fact[j] == reach_lm[k]) {
+                                cout << "intersection not empty" << endl;
                                 intersection_empty = false;
+                            }
+                        }
+                    }
 
                     if (!intersection_empty) {
                         insert = false;
                         break;
                     }
                 } else {
+                    cout << "insert false" << endl;
                     insert = false;
                     break;
                 }
             }
-            if (insert)
-                forward_orders[&landmark].insert(fact);
+            if (insert) {
+                cout << "inserting" << endl;
+                forward_orders[landmark_index].insert(fact);
+            }
+            cout << "inner loop end" << endl;
         }
+        cout << "outer loop end" << endl;
+    }
+    cout << "function end" << endl;
 }
 
 void DalmFactoryRhw::add_lm_forward_orders() {
-    for (Landmark *lm : fact_lms) {
-        for (const auto &fact : forward_orders[lm]) {
-            for (Landmark *lm2 : fact_lms) {
-                if (lm2->facts.size() == 1 && lm2->facts[0] == fact) {
-                    size_t parent_pa = flm_to_dalm[lm].first;
-                    size_t child_pa = flm_to_dalm[lm2].first;
-                    size_t child_fa = flm_to_dalm[lm2].second;
-                    dalm_graph->add_edge(parent_pa, child_pa, true);
-                    dalm_graph->add_edge(parent_pa, child_fa, true);
+    for (int index1 = 0; index1 < (int) landmarks.size(); ++index1) {
+        for (const auto &fact : forward_orders[index1]) {
+            for (int index2 = 0; index2 < (int) landmarks.size(); ++index2) {
+                Landmark &lm = landmarks[index2].fact_landmark;
+                if (lm.facts.size() == 1 && lm.facts[0] == fact) {
+                    add_nat_edge(index1, index2);
                 }
             }
         }
