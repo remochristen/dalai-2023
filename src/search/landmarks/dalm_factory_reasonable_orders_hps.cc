@@ -79,6 +79,11 @@ void DalmFactoryReasonableOrdersHPS::approximate_reasonable_orders(
         size_t parent_id = triple.achiever_lm;
         size_t child_id = triple.preconditioned_lm;
 
+        // TODO somewhat hacky - I think the problem is that different fact landmarks get put together if they don't have achievers
+        if (dalm_graph->get_actions(parent_id).empty()) {
+            continue;
+        }
+
         list<size_t> open;
         unordered_set<size_t> interesting_dalms;
         open.push_back(child_id);
