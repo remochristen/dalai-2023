@@ -12,7 +12,8 @@ namespace landmarks {
 DisjunctiveActionLandmarkStatusManager::DisjunctiveActionLandmarkStatusManager(
     DisjunctiveActionLandmarkGraph &graph)
     : lm_graph(graph),
-      past_lms(vector<bool>(graph.get_number_of_landmarks(), true)),
+      progress_uaa_landmarks(graph.has_uaa_landmarks()),
+      past_lms(vector<bool>(graph.get_last_relevant_past_id()+1, true)),
       future_lms(vector<bool>(graph.get_number_of_landmarks(), false)) {
 }
 
@@ -34,7 +35,7 @@ void DisjunctiveActionLandmarkStatusManager::process_initial_state(
     for (int id = 0; id < num_landmarks; ++id) {
         assert(lm_graph.is_true_in_initial(id)
                || lm_graph.is_initially_fut(id));
-        if (!lm_graph.is_true_in_initial(id)) {
+        if ((int) id < past.size() && !lm_graph.is_true_in_initial(id)) {
             past.reset(id);
         }
         if (lm_graph.is_initially_fut(id)) {
@@ -56,8 +57,8 @@ void DisjunctiveActionLandmarkStatusManager::process_state_transition(
 
     int num_landmarks = static_cast<int>(lm_graph.get_number_of_landmarks());
     utils::unused_variable(num_landmarks);
-    assert(past.size() == num_landmarks);
-    assert(parent_past.size() == num_landmarks);
+    assert(past.size() == (int)lm_graph.get_last_relevant_past_id()+1);
+    assert(parent_past.size() == (int)lm_graph.get_last_relevant_past_id()+1);
     assert(fut.size() == num_landmarks);
     assert(parent_fut.size() == num_landmarks);
 
@@ -65,6 +66,12 @@ void DisjunctiveActionLandmarkStatusManager::process_state_transition(
     progress_goal(ancestor_state, fut);
     progress_greedy_necessary(ancestor_state, past, fut);
     progress_weak(past, fut);
+    if (progress_uaa_landmarks) {
+        int lm_index = lm_graph.get_uaa_landmark_for_operator(op_id.get_index());
+        if (lm_index >= 0) {
+            fut.set(lm_index);
+        }
+    }
 }
 
 void DisjunctiveActionLandmarkStatusManager::progress_basic(
@@ -75,18 +82,18 @@ void DisjunctiveActionLandmarkStatusManager::progress_basic(
     int num_landmarks = static_cast<int>(lm_graph.get_number_of_landmarks());
 
     // TODO: Is there a more efficient way to do this?
-    /*
-     * We need to update the landmark information if the parent has "stronger" information
-     * (parent: only fut, child: only past/past and fut; or parent: past and fut, child: only past)
-     * and the landmark was not achieved in this transition (because otherwise the information would
-     * degenerate to "only past").
-     * In order to avoid calling count on the action set if possible, we first check for the "stronger" condition.
-     * Note that the condition can only fire if the landmark is fut in parent.
-     */
     for (int lm_id = 0; lm_id < num_landmarks; ++lm_id) {
+        /*
+         * We need to update the landmark information if the parent has "stronger" information
+         * (parent: only fut, child: only past/past and fut; or parent: past and fut, child: only past)
+         * and the landmark was not achieved in this transition (because otherwise the information would
+         * degenerate to "only past").
+         * In order to avoid calling count on the action set if possible, we first check for the "stronger" condition.
+         * Note that the condition can only fire if the landmark is fut in parent.
+         */
         if (parent_fut.test(lm_id)) {
             bool parent_fut_stronger = !fut.test(lm_id);
-            bool parent_past_stronger = (!parent_past.test(lm_id) && past.test(lm_id));
+            bool parent_past_stronger = (lm_id < past.size() && !parent_past.test(lm_id) && past.test(lm_id));
             if ((parent_fut_stronger || parent_past_stronger) && lm_graph.get_actions(lm_id).count(op_id) == 0) {
                 if (parent_fut_stronger) {
                     fut.set(lm_id);
@@ -144,14 +151,12 @@ LandmarkStatus DisjunctiveActionLandmarkStatusManager::get_landmark_status(
     const BitsetView past = get_past_landmarks(ancestor_state);
     const BitsetView fut = get_future_landmarks(ancestor_state);
 
-    if (!past.test(id)) {
-        assert(fut.test(id));
-        return FUTURE;
-    } else if (!fut.test(id)) {
-        assert(past.test(id));
+    if (!fut.test(id)) {
         return PAST;
-    } else {
+    } else if ((int) id < past.size() && past.test(id)) {
         return PAST_AND_FUTURE;
+    } else {
+        return FUTURE;
     }
 }
 }

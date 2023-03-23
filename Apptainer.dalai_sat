@@ -17,7 +17,7 @@ Stage: build
     ## Build the planner
     cd /planner
     pypy3 build.py "ipc23_sat" -j4
-    strip --strip-all builds/release/bin/downward
+    strip --strip-all builds/ipc23_sat/bin/downward
 
 
 # Stage 2: Run the planner
@@ -45,7 +45,7 @@ Stage: run
     PROBLEMFILE="$2"
     PLANFILE="$3"
 
-    pypy3 /fast-downward.py \
+    pypy3 /planner/fast-downward.py \
         --build "ipc23_sat" \
         --plan-file "$PLANFILE" \
         --alias "dalai-sat-2023" \

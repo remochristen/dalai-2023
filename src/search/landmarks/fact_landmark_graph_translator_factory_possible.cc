@@ -108,7 +108,7 @@ shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactoryPos
     const State &initial_state = task_proxy.get_initial_state();
     LandmarkGraph &fact_graph = *lm->compute_lm_graph(task);
     remove_derived_landmarks(fact_graph);
-    dalm_graph graph = make_shared<DisjunctiveActionLandmarkGraph>();
+    dalm_graph graph = make_shared<DisjunctiveActionLandmarkGraph>(false, task_proxy);
     add_nodes(graph, fact_graph, initial_state);
     add_edges(graph, fact_graph, initial_state);
     if (graph->get_number_of_landmarks() == 0) {

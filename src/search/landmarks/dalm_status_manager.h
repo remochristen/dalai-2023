@@ -13,6 +13,7 @@ enum LandmarkStatus {PAST = 0, FUTURE = 1, PAST_AND_FUTURE = 2};
 
 class DisjunctiveActionLandmarkStatusManager {
     DisjunctiveActionLandmarkGraph &lm_graph;
+    const bool progress_uaa_landmarks;
 
     PerStateBitset past_lms;
     PerStateBitset future_lms;

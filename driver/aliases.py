@@ -157,11 +157,11 @@ ALIASES["dalai-agl-2023"] = [
 
 ALIASES["dalai-opt-2023"] = [
     "--search",
-    "astar(cyclic(lm_factory=fact_translator(lm_reasonable_orders_hps(lm_rhw())),"
+    "astar(cyclic(lm_factory=fact_translator(lm_reasonable_orders_hps(lm_rhw()), uaa_landmarks=true),"
     "cycle_generator=johnson))",
 ]
 
-dalai_sat_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()))"
+dalai_sat_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()), uaa_landmarks=true)"
 ALIASES["dalai-sat-2023"] = [
     "--search",
     "--if-unit-cost",
@@ -185,7 +185,7 @@ ALIASES["dalai-sat-2023"] = [
         lazy_wastar([hlm_plus],preferred=[hlm_plus],w=2),
         lazy_wastar([hlm_plus],preferred=[hlm_plus],w=1),
         lazy_wastar([hlm_orig],preferred=[hlm_orig],w=1)
-    "],repeat_last=true,continue_on_fail=true))))""",
+    ],repeat_last=true,continue_on_fail=true))))""",
     # Append --always to be on the safe side if we want to append
     # additional options later.
     "--always",
