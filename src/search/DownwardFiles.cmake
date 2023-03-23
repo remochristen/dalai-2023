@@ -745,9 +745,8 @@ fast_downward_plugin(
         landmarks/cyclic_landmark_heuristic
         landmarks/depth_first_oracle
         landmarks/floyd_warshall_oracle
-        operator_counting/constraint_generator
         operator_counting/landmark_constraints
-    DEPENDS LANDMARKS LP_SOLVER
+    DEPENDS LANDMARKS OPERATOR_COUNTING
 )
 
 fast_downward_plugin(

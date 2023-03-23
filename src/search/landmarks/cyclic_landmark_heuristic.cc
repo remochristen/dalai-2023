@@ -18,6 +18,9 @@ CyclicLandmarkHeuristic::CyclicLandmarkHeuristic(const plugins::Options &opts)
     constraint_generators.emplace_back(
         make_shared<operator_counting::LandmarkConstraints>(
             opts, lm_graph, lm_status_manager));
+    for (auto &constraint_generator : opts.get_list<shared_ptr<operator_counting::ConstraintGenerator>>("additional_constraint_generators")) {
+        constraint_generators.push_back(constraint_generator);
+    }
     prepare_linear_program();
 }
 
@@ -89,8 +92,11 @@ public:
             "more computationally expensive. Turning this option on can thus "
             "drastically increase the runtime.",
             "false");
-        /* TODO: Add option to combine landmark constraints with other
-            operator counting constraints. */
+        add_list_option<shared_ptr<operator_counting::ConstraintGenerator>>(
+            "additional_constraint_generators",
+            "methods that generate constraints over operator-counting "
+            "variables to complement (cyclic) landmark constraints.",
+            "[]");
 
         document_language_support("action costs", "supported");
         document_language_support("conditional_effects", "not supported");
