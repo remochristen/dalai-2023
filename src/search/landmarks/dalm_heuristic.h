@@ -18,12 +18,12 @@ class DisjunctiveActionLandmarkStatusManager;
 class DisjunctiveActionLandmarkHeuristic : public Heuristic {
     const bool use_preferred_operators;
 
-    std::unique_ptr<successor_generator::SuccessorGenerator> successor_generator;
+    std::shared_ptr<successor_generator::SuccessorGenerator> successor_generator;
     std::unordered_map<int, std::vector<int>> landmarks_by_operator;
 protected:
     std::shared_ptr<DisjunctiveActionLandmarkGraph> lm_graph;
 
-    std::unique_ptr<DisjunctiveActionLandmarkStatusManager> lm_status_manager;
+    std::shared_ptr<DisjunctiveActionLandmarkStatusManager> lm_status_manager;
 
     void initialize(const plugins::Options &opts);
     void compute_landmark_graph(const plugins::Options &opts);

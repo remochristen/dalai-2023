@@ -6,9 +6,9 @@ glibcxx_debug = ["-DCMAKE_BUILD_TYPE=Debug", "-DUSE_LP=NO", "-DUSE_GLIBCXX_DEBUG
 minimal = ["-DCMAKE_BUILD_TYPE=Release", "-DDISABLE_PLUGINS_BY_DEFAULT=YES"]
 
 IPC23_AGILE = [
+    "LANDMARKS",
     # "PLUGIN_EAGER_GREEDY",
     "PLUGIN_LAZY_GREEDY",
-    "LANDMARKS",
 ]
 
 IPC23_SATISFICING = [
@@ -19,8 +19,9 @@ IPC23_SATISFICING = [
 ]
 
 IPC23_OPTIMAL = [
-    "PLUGIN_ASTAR",
+    "CYCLIC_LANDMARK_HEURISTIC",
     "LANDMARKS",
+    "PLUGIN_ASTAR",
 ]
 
 def get_build_config(plugins, debug=False, lp=False):

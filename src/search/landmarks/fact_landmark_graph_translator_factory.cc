@@ -70,7 +70,7 @@ void FactLandmarkGraphTranslatorFactory::add_nodes(
 
 void FactLandmarkGraphTranslatorFactory::add_edges(
     dalm_graph &graph, const LandmarkGraph &lm_graph, const State &init_state) {
-    for (auto &node: lm_graph.get_nodes()) {
+    for (auto &node : lm_graph.get_nodes()) {
         Landmark &fact_lm = node->get_landmark();
         int from_id = -1;
         if (fact_lm.is_true_in_state(init_state)) {
