@@ -18,7 +18,7 @@ using utils::ExitCode;
 
 namespace landmarks {
 DalmFactoryRhw::DalmFactoryRhw(const plugins::Options &)
-    : LandmarkGraphFactory(), dalm_graph(make_shared<DisjunctiveActionLandmarkGraph>()) {
+    : LandmarkGraphFactory() {
 }
 
 void DalmFactoryRhw::build_dtg_successors(const TaskProxy &task_proxy) {
@@ -349,6 +349,7 @@ void DalmFactoryRhw::add_nat_edge(int parent_index, int child_index) {
 std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark_graph(
     const shared_ptr<AbstractTask> &task) {
     TaskProxy task_proxy(*task);
+    dalm_graph = make_shared<DisjunctiveActionLandmarkGraph>(false, task_proxy);
     Exploration exploration(task_proxy, utils::g_log);
 
     utils::g_log << "Generating landmarks with dalm rhw" << endl;
@@ -437,6 +438,10 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
         }
     }
     add_lm_forward_orders();
+
+    if (dalm_graph->get_number_of_landmarks() == 0) {
+        dalm_graph->add_node({}, true);
+    }
 
     utils::g_log << "Landmark graph of initial state contains "
                  << dalm_graph->get_number_of_landmarks() << " landmarks." << endl;

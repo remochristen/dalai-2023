@@ -98,7 +98,10 @@ void DalmFactoryReasonableOrdersHPS::approximate_reasonable_orders(
 
         for (size_t lm_id : interesting_dalms) {
             if (interferes(task_proxy, dalm_graph->get_actions(lm_id), facts)) {
-                dalm_graph->add_edge(lm_id, parent_id, false);
+                // TODO figure out why it is still possible to reach both landmarks at the same time
+                if (! dalm_graph->landmarks_overlap(lm_id, parent_id)) {
+                    dalm_graph->add_edge(lm_id, parent_id, false);
+                }
             }
         }
 
