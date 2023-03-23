@@ -157,11 +157,11 @@ ALIASES["dalai-agl-2023"] = [
 
 ALIASES["dalai-opt-2023"] = [
     "--search",
-    "astar(cyclic(lm_factory=fact_translator(lm_reasonable_orders_hps(lm_rhw()), uaa_landmarks=true),"
-    "cycle_generator=johnson))",
+    "astar(cyclic(lm_factory=fact_translator(lm_reasonable_orders_hps(lm_rhw()),uaa_landmarks=true),"
+    "cycle_generator=johnson,additional_constraint_generators=[lmcut_constraints()]))",
 ]
 
-dalai_sat_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()), uaa_landmarks=true)"
+dalai_sat_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()),uaa_landmarks=true)"
 ALIASES["dalai-sat-2023"] = [
     "--search",
     "--if-unit-cost",
