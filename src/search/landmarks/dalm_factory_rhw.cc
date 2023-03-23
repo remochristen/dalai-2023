@@ -277,6 +277,10 @@ void DalmFactoryRhw::compute_disjunctive_preconditions(
 }
 
 int DalmFactoryRhw::add_landmark(const set<FactPair> &facts, const State &initial_state, int child_index) {
+    if (fact_lms.count(facts) > 0) {
+        return -1;
+    }
+    fact_lms.insert(facts);
     bool is_derived = false;
     vector<FactPair> fact_lm_vec;
     set<int> dalm_ops = {};
@@ -358,11 +362,13 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
     for (FactProxy goal : task_proxy.get_goals()) {
         set<FactPair> lm_set = {goal.get_pair()};
         int lm_index = add_landmark(lm_set, initial_state, -1);
-        int dalm_id = landmarks[lm_index].possible_achiever_dalm;
-        if (dalm_id >= 0) {
-            dalm_graph->mark_lm_goal_achiever(goal.get_pair(), dalm_id);
+        if (lm_index >= 0) {
+            int dalm_id = landmarks[lm_index].possible_achiever_dalm;
+            if (dalm_id >= 0) {
+                dalm_graph->mark_lm_goal_achiever(goal.get_pair(), dalm_id);
+            }
+            open_landmarks.push_back(lm_index);
         }
-        open_landmarks.push_back(lm_index);
     }
 
     while (!open_landmarks.empty()) {
@@ -406,8 +412,10 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
             for (const auto &pre : shared_pre) {
                 set<FactPair> pre_set({FactPair(pre.first, pre.second)});
                 int new_lm_index = add_landmark(pre_set, initial_state, landmark_index);
-                add_gn_edge(new_lm_index, landmark_index);
-                open_landmarks.push_back(new_lm_index);
+                if (new_lm_index >= 0) {
+                    add_gn_edge(new_lm_index, landmark_index);
+                    open_landmarks.push_back(new_lm_index);
+                }
             }
             // Extract additional orders from the relaxed planning graph and DTG.
             approximate_lookahead_orders(task_proxy, reached, landmark_index);
@@ -420,8 +428,10 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
                 // We don't want disjunctive LMs to get too big.
                 if (preconditions.size() < 5) { // TODO make this an adjustable option
                     int new_lm_index = add_landmark(preconditions, initial_state, landmark_index);
-                    add_gn_edge(new_lm_index, landmark_index);
-                    open_landmarks.push_back(new_lm_index);
+                    if (new_lm_index >= 0) {
+                        add_gn_edge(new_lm_index, landmark_index);
+                        open_landmarks.push_back(new_lm_index);
+                    }
                 }
             }
         }
@@ -490,8 +500,10 @@ void DalmFactoryRhw::approximate_lookahead_orders(
                 //    found_simple_lm_and_order(FactPair(lm_fact.var, value), landmark, EdgeType::NATURAL);
                 set<FactPair> new_lm_fact = {FactPair(lm_fact.var, value)};
                 int new_lm_index = add_landmark(new_lm_fact, initial_state, landmark_index);
-                add_nat_edge(new_lm_index, landmark_index);
-                open_landmarks.push_back(new_lm_index); // TODO: the original code did not emplace the found landmark, why?
+                if (new_lm_index >= 0) {
+                    add_nat_edge(new_lm_index, landmark_index);
+                    open_landmarks.push_back(new_lm_index); // TODO: the original code did not emplace the found landmark, why?
+                }
             }
         }
 }

@@ -33,6 +33,7 @@ class DalmFactoryRhw : public LandmarkGraphFactory {
     std::unordered_map<int, utils::HashSet<FactPair>> forward_orders;
 
     std::vector<MixedLandmark> landmarks;
+    std::set<std::set<FactPair>> fact_lms;
     std::list<int> open_landmarks; //represents indices for landmarks vector
 
 //    std::vector<Landmark *> fact_lms;
