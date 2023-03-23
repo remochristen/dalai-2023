@@ -5,20 +5,45 @@ release_no_lp = ["-DCMAKE_BUILD_TYPE=Release", "-DUSE_LP=NO"]
 glibcxx_debug = ["-DCMAKE_BUILD_TYPE=Debug", "-DUSE_LP=NO", "-DUSE_GLIBCXX_DEBUG=YES"]
 minimal = ["-DCMAKE_BUILD_TYPE=Release", "-DDISABLE_PLUGINS_BY_DEFAULT=YES"]
 
-IPC23_PLUGINS = [
-    "PLUGIN_ASTAR",
+IPC23_AGILE = [
+    # "PLUGIN_EAGER_GREEDY",
+    "PLUGIN_LAZY_GREEDY",
+    "LANDMARKS",
+]
+
+IPC23_SATISFICING = [
+    "ITERATED_SEARCH",
     "LANDMARKS",
     "PLUGIN_LAZY_GREEDY",
+    "PLUGIN_LAZY_WASTAR",
 ]
-IPC23_STANDARD = ["-DDISABLE_PLUGINS_BY_DEFAULT=YES"] + [
-    f"-DPLUGIN_{plugin}_ENABLED=True" for plugin in IPC23_PLUGINS
+
+IPC23_OPTIMAL = [
+    "PLUGIN_ASTAR",
+    "LANDMARKS",
 ]
-ipc23 = ["-DCMAKE_BUILD_TYPE=Release"] + IPC23_STANDARD
-ipc23_debug = ["-DCMAKE_BUILD_TYPE=Debug"] + IPC23_STANDARD
-ipc23_no_lp = ipc23 + ["-DUSE_LP=NO"]
-ipc23_no_lp_debug = ipc23_debug + ["-DUSE_LP=NO"]
 
-ipc23_eager = ipc23 + ["-DPLUGIN_PLUGIN_EAGER_GREEDY_ENABLED=True"]
+def get_build_config(plugins, debug=False, lp=False):
+    config = ["-DDISABLE_PLUGINS_BY_DEFAULT=YES"] + [
+        f"-DPLUGIN_{plugin}_ENABLED=True" for plugin in plugins
+    ]
+    if debug:
+        config = ["-DCMAKE_BUILD_TYPE=Debug"] + config
+    else:
+        config = ["-DCMAKE_BUILD_TYPE=Release"] + config
 
-DEFAULT = "ipc23"
-DEBUG = "ipc23_debug"
+    if not lp:
+        config += ["-DUSE_LP=NO"]
+
+    return config
+
+
+ipc23_agl = get_build_config(IPC23_AGILE)
+ipc23_agl_debug = get_build_config(IPC23_AGILE, debug=True)
+ipc23_sat = get_build_config(IPC23_SATISFICING)
+ipc23_sat_debug = get_build_config(IPC23_SATISFICING, debug=True)
+ipc23_opt = get_build_config(IPC23_OPTIMAL, lp=True)
+ipc23_opt_debug = get_build_config(IPC23_OPTIMAL, lp=True)
+
+DEFAULT = "release"
+DEBUG = "debug"
