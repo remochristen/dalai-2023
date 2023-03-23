@@ -318,6 +318,7 @@ void DisjunctiveActionLandmarkGraph::order_dalms_with_relevant_past_first() {
             DisjunctiveActionLandmarkNode tmp = lms[it.second];
             swap(lms[it.first], lms[it.second]);
             swap(lm_true_in_initial[it.first], lm_true_in_initial[it.second]);
+            swap(lm_initially_fut[it.first], lm_initially_fut[it.second]);
         }
     }
     for (auto &it : ids) {
