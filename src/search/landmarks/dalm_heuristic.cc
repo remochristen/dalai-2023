@@ -36,15 +36,14 @@ void DisjunctiveActionLandmarkHeuristic::initialize(const plugins::Options &opts
     precompute_landmarks_by_operator_lookup();
 
     lm_status_manager =
-        utils::make_unique_ptr<DisjunctiveActionLandmarkStatusManager>(
-            *lm_graph);
+        make_shared<DisjunctiveActionLandmarkStatusManager>(*lm_graph);
+        //utils::make_unique_ptr<DisjunctiveActionLandmarkStatusManager>(*lm_graph);
 
     if (use_preferred_operators) {
         /* Ideally, we should reuse the successor generator of the main
            task in cases where it's compatible. See issue564. */
         successor_generator =
-            utils::make_unique_ptr<successor_generator::SuccessorGenerator>(
-                task_proxy);
+            make_shared<successor_generator::SuccessorGenerator>(task_proxy);
     }
 }
 

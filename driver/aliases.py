@@ -141,6 +141,56 @@ ALIASES["seq-opt-bjolp"] = [
 ALIASES["seq-opt-lmcut"] = [
     "--search", "astar(lmcut())"]
 
+dalai_agl_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()))"
+ALIASES["dalai-agl-2023"] = [
+    "--search",
+    "--if-unit-cost",
+    f"let(hlm,dalm_sum({dalai_agl_lm_factory},pref=true),"
+    "lazy_greedy([hlm],preferred=[hlm]))",
+    "--if-non-unit-cost",
+    f"let(hlm,dalm_sum({dalai_agl_lm_factory},transform=adapt_costs(one),pref=true),"
+    "lazy_greedy([hlm],preferred=[hlm],cost_type=one,reopen_closed=false))"
+    # Append --always to be on the safe side if we want to append
+    # additional options later.
+    "--always",
+]
+
+ALIASES["dalai-opt-2023"] = [
+    "--search",
+    "astar(cyclic(lm_factory=fact_translator(lm_reasonable_orders_hps(lm_rhw())),"
+    "cycle_generator=johnson,additional_constraint_generators=[lmcut_constraints()]))",
+]
+
+dalai_sat_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()),uaa_landmarks=true)"
+ALIASES["dalai-sat-2023"] = [
+    "--search",
+    "--if-unit-cost",
+    f"let(hlm,dalm_greedy_hs({dalai_sat_lm_factory},pref=true),"
+    """iterated([
+        lazy_greedy([hlm],preferred=[hlm]),
+        lazy_wastar([hlm],preferred=[hlm],w=5),
+        lazy_wastar([hlm],preferred=[hlm],w=3),
+        lazy_wastar([hlm],preferred=[hlm],w=2),
+        lazy_wastar([hlm],preferred=[hlm],w=1)
+    ],repeat_last=true,continue_on_fail=true))""",
+    "--if-non-unit-cost",
+    f"let(hlm_orig,dalm_greedy_hs({dalai_sat_lm_factory},pref=true),"
+    f"let(hlm_unit,dalm_greedy_hs({dalai_sat_lm_factory},transform=adapt_costs(one),pref=true),"
+    f"let(hlm_plus,dalm_greedy_hs({dalai_sat_lm_factory},transform=adapt_costs(plusone),pref=true),"
+    """iterated([
+        lazy_greedy([hlm_unit],preferred=[hlm_unit],cost_type=one,reopen_closed=false),
+        lazy_greedy([hlm_plus],preferred=[hlm_plus],reopen_closed=false),
+        lazy_wastar([hlm_plus],preferred=[hlm_plus],w=5),
+        lazy_wastar([hlm_plus],preferred=[hlm_plus],w=3),
+        lazy_wastar([hlm_plus],preferred=[hlm_plus],w=2),
+        lazy_wastar([hlm_plus],preferred=[hlm_plus],w=1),
+        lazy_wastar([hlm_orig],preferred=[hlm_orig],w=1)
+    ],repeat_last=true,continue_on_fail=true))))""",
+    # Append --always to be on the safe side if we want to append
+    # additional options later.
+    "--always",
+]
+
 
 PORTFOLIOS = {}
 for portfolio in os.listdir(PORTFOLIO_DIR):
