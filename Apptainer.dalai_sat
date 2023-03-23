@@ -1,0 +1,71 @@
+# Stage 1: Compile the planner
+Bootstrap: docker
+From: ubuntu:22.04
+Stage: build
+
+%files
+    . /planner
+
+%post
+    ## Install all necessary dependencies.
+    apt-get update
+    apt-get -y install --no-install-recommends cmake pypy3 make g++
+
+    ## Clear build directory.
+    rm -rf /planner/builds
+
+    ## Build the planner
+    cd /planner
+    pypy3 build.py "ipc23_sat" -j4
+    strip --strip-all builds/release/bin/downward
+
+
+# Stage 2: Run the planner
+Bootstrap: docker
+From: ubuntu:22.04
+Stage: run
+
+# Copy planner binary and required files from Stage 1.
+%files from build
+    /planner/fast-downward.py
+    /planner/builds/ipc23_sat/bin/
+    /planner/driver
+
+%post
+    ## Install only dependencies for running the planner.
+    apt-get update
+    apt-get -y install --no-install-recommends pypy3
+    ## Remove unnecessary files to keep the image small.
+    rm -rf /var/lib/apt/lists/*
+
+
+# The runscript is called whenever the container is used to solve an instance.
+%runscript
+    DOMAINFILE="$1"
+    PROBLEMFILE="$2"
+    PLANFILE="$3"
+
+    pypy3 /fast-downward.py \
+        --build "ipc23_sat" \
+        --plan-file "$PLANFILE" \
+        --alias "dalai-sat-2023" \
+        "$DOMAINFILE" \
+        "$PROBLEMFILE"
+
+## Define meta data
+%labels
+Name        DALAI 2023 Satisficing
+Description TODO
+Authors     Clemens Büchner <clemens.buechner@unibas.ch>, Remo Christen <remo.christen@unibas.ch>, Salomé Eriksson <salome.eriksson@unibas.ch>, Thomas Keller <tho.keller@unibas.ch>
+License     GPL 3
+Tracks      Satisficing
+SupportsDerivedPredicates                       TODO
+SupportsUniversallyQuantifiedPreconditions      TODO
+SupportsExistentiallyQuantifiedPreconditions    TODO
+SupportsUniversallyQuantifiedEffects            TODO
+SupportsNegativePreconditions                   TODO
+SupportsEqualityPreconditions                   TODO
+SupportsInequalityPreconditions                 TODO
+SupportsConditionalEffects                      TODO
+SupportsImplyPreconditions                      TODO
+
