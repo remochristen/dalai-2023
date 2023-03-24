@@ -741,6 +741,7 @@ fast_downward_plugin(
     SOURCES
         landmarks/dalm_factory_reasonable_orders_hps
     	landmarks/dalm_factory_rhw
+        landmarks/dalm_factory_uaa
         landmarks/dalm_graph
         landmarks/dalm_graph_factory
         landmarks/dalm_greedy_hitting_set_heuristic
