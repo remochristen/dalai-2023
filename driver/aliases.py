@@ -161,7 +161,7 @@ ALIASES["dalai-opt-2023"] = [
     "cycle_generator=johnson,additional_constraint_generators=[lmcut_constraints()]))",
 ]
 
-dalai_sat_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()),uaa_landmarks=true)"
+dalai_sat_lm_factory = "dalm_uaa(dalm_reasonable_orders_hps(dalm_rhw()))"
 ALIASES["dalai-sat-2023"] = [
     "--search",
     "--if-unit-cost",
