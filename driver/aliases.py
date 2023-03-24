@@ -173,7 +173,7 @@ ALIASES["dalai-sat-2023"] = [
         lazy_wastar([hlm],preferred=[hlm],boost=1,w=3),
         lazy_wastar([hlm],preferred=[hlm],boost=1,w=2),
         lazy_wastar([hlm],preferred=[hlm],boost=1,w=1)
-    ],repeat_last=true,continue_on_fail=true))""",
+    ],repeat_last=true,continue_on_fail=true)))""",
     "--if-non-unit-cost",
     f"let(hlm_orig,dalm_greedy_hs(dalm_uaa({dalai_sat_lm_factory}),pref=true),"
     f"let(hlm_unit,dalm_greedy_hs({dalai_sat_lm_factory},transform=adapt_costs(one),pref=true),"
