@@ -15,7 +15,7 @@ ARCHIVE_PATH = "buechner/ipc23-landmarks/boost/"
 DIR = os.path.dirname(os.path.abspath(__file__))
 BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
 REVISIONS = [("55f65a462d8004fa475c83da288d9c56e700b966", "")]
-BUILDS = ["ipc23"]
+BUILDS = ["ipc23_agl"]
 CONFIG_NICKS = [
     (f"agile_boost={boost}", [
         "--search",
@@ -23,7 +23,7 @@ CONFIG_NICKS = [
         f"dalm_sum(fact_translator(lm_reasonable_orders_hps(lm_rhw())),"
         f"transform=adapt_costs(one),pref=True), lazy_greedy([hlm], boost={boost}, preferred=[hlm], cost_type=one,"
         "reopen_closed=false))"
-    ]) for boost in [, "1", "2", "3", "5", "10", "50", "100"]]
+    ]) for boost in ["1", "2", "3", "5", "10", "50", "100"]]
 CONFIGS = [
     IssueConfig(
         config_nick,
