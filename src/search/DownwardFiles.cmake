@@ -704,9 +704,9 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
-        NAME LANDMARKS
-        HELP "Plugin containing the code to reason with landmarks"
-        SOURCES
+    NAME LANDMARKS
+    HELP "Plugin containing the code to reason with landmarks"
+    SOURCES
         landmarks/dalm_graph
         landmarks/dalm_graph_factory
         landmarks/dalm_greedy_hitting_set_heuristic
@@ -739,6 +739,8 @@ fast_downward_plugin(
     NAME DISJUNCTIVE_ACTION_LANDMARKS
     HELP "Plugin containing the code to reason with disjunctive action landmarks"
     SOURCES
+        landmarks/dalm_factory_reasonable_orders_hps
+    	landmarks/dalm_factory_rhw
         landmarks/dalm_graph
         landmarks/dalm_graph_factory
         landmarks/dalm_greedy_hitting_set_heuristic

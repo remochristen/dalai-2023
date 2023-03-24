@@ -215,7 +215,7 @@ shared_ptr<DisjunctiveActionLandmarkGraph> FactLandmarkGraphTranslatorFactory::c
     }
 
     utils::g_log << "Landmark graph of initial state contains "
-                 << graph->get_number_of_landmarks() << endl;
+                 << graph->get_number_of_landmarks() << " landmarks." << endl;
     utils::g_log << "Landmark graph of initial state contains "
                  << graph->get_number_of_orderings()
                  << " orderings of which "
