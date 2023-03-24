@@ -84,14 +84,14 @@ Name        DALAI 2023 Optimal
 Description TODO
 Authors     Clemens Büchner <clemens.buechner@unibas.ch>, Remo Christen <remo.christen@unibas.ch>, Salomé Eriksson <salome.eriksson@unibas.ch>, Thomas Keller <tho.keller@unibas.ch>
 License     GPL 3
-Tracks      Satisficing
-SupportsDerivedPredicates                       TODO
-SupportsUniversallyQuantifiedPreconditions      TODO
-SupportsExistentiallyQuantifiedPreconditions    TODO
-SupportsUniversallyQuantifiedEffects            TODO
-SupportsNegativePreconditions                   TODO
-SupportsEqualityPreconditions                   TODO
-SupportsInequalityPreconditions                 TODO
+Tracks      optimal
+SupportsDerivedPredicates                       yes
+SupportsUniversallyQuantifiedPreconditions      yes
+SupportsExistentiallyQuantifiedPreconditions    yes
+SupportsUniversallyQuantifiedEffects            yes
+SupportsNegativePreconditions                   yes
+SupportsEqualityPreconditions                   yes
+SupportsInequalityPreconditions                 yes
 SupportsConditionalEffects                      TODO
-SupportsImplyPreconditions                      TODO
+SupportsImplyPreconditions                      yes
 
