@@ -62,7 +62,7 @@ class DalmFactoryRhw : public LandmarkGraphFactory {
         const TaskProxy &task_proxy,
         std::vector<std::set<FactPair>> &disjunctive_pre,
         std::set<int> &relevant_op_ids,
-        const Landmark &landmark);
+        const Landmark &landmark, const std::unordered_map<int, int> &shared_pre);
 
     std::shared_ptr<DisjunctiveActionLandmarkGraph> compute_landmark_graph(
         const std::shared_ptr<AbstractTask> &task) override;

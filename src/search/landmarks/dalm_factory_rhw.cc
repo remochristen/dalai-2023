@@ -232,7 +232,7 @@ void DalmFactoryRhw::build_disjunction_classes(const TaskProxy &task_proxy) {
 
 void DalmFactoryRhw::compute_disjunctive_preconditions(
     const TaskProxy &task_proxy, vector<set<FactPair>> &disjunctive_pre,
-    set<int> &relevant_op_ids, const Landmark &landmark) {
+    set<int> &relevant_op_ids, const Landmark &landmark, const unordered_map<int, int> &shared_pre) {
     /*
       Compute disjunctive preconditions from all operators than can potentially
       achieve landmark bp, given the reachability in the relaxed planning graph.
@@ -260,10 +260,10 @@ void DalmFactoryRhw::compute_disjunctive_preconditions(
             // Only deal with propositions that are not shared preconditions
             // (those have been found already and are simple landmarks).
             const FactPair pre_fact(pre.first, pre.second);
-            //if (!dalm_graph->contains_simple_landmark(pre_fact)) { TODO: re-enable this test
+            if (shared_pre.count(pre.first) == 0 || shared_pre.at(pre.first) != pre.second) {
                 preconditions[disj_class].push_back(pre_fact);
                 used_operators[disj_class].insert(op_id);
-            //}
+            }
         }
     }
     for (const auto &pre : preconditions) {
@@ -425,7 +425,8 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
             // Process achieving operators again to find disjunctive LMs
             vector<set<FactPair>> disjunctive_pre;
             compute_disjunctive_preconditions(
-                    task_proxy, disjunctive_pre, first_achievers, landmarks[landmark_index].fact_landmark);
+                    task_proxy, disjunctive_pre, first_achievers, landmarks[landmark_index].fact_landmark,
+                    shared_pre);
             for (const auto &preconditions : disjunctive_pre) {
                 // We don't want disjunctive LMs to get too big.
                 if (preconditions.size() <= max_preconditions) { // TODO make this an adjustable option
