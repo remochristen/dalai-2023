@@ -17,8 +17,9 @@ using namespace std;
 using utils::ExitCode;
 
 namespace landmarks {
-DalmFactoryRhw::DalmFactoryRhw(const plugins::Options &)
-    : LandmarkGraphFactory() {
+DalmFactoryRhw::DalmFactoryRhw(const plugins::Options &opts)
+    : LandmarkGraphFactory(),
+      max_preconditions(opts.get<int>("max_preconditions")) {
 }
 
 void DalmFactoryRhw::build_dtg_successors(const TaskProxy &task_proxy) {
@@ -427,7 +428,7 @@ std::shared_ptr<DisjunctiveActionLandmarkGraph> DalmFactoryRhw::compute_landmark
                     task_proxy, disjunctive_pre, first_achievers, landmarks[landmark_index].fact_landmark);
             for (const auto &preconditions : disjunctive_pre) {
                 // We don't want disjunctive LMs to get too big.
-                if (preconditions.size() < 5) { // TODO make this an adjustable option
+                if (preconditions.size() <= max_preconditions) { // TODO make this an adjustable option
                     int new_lm_index = add_landmark(preconditions, initial_state, landmark_index);
                     if (new_lm_index >= 0) {
                         add_gn_edge(new_lm_index, landmark_index);
@@ -646,6 +647,13 @@ public:
         document_title("dalm RHW Landmarks");
         document_synopsis(
             "TODO");
+
+
+        add_option<int>(
+            "max_preconditions",
+            "maximal numbers of common preconditions for achieving landmarks"
+            "to continue searching for achievers.",
+            "4");
 
         document_language_support(
             "conditional_effects",

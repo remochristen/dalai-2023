@@ -25,6 +25,7 @@ struct MixedLandmark {
 };
 
 class DalmFactoryRhw : public LandmarkGraphFactory {
+    const size_t max_preconditions;
     std::shared_ptr<DisjunctiveActionLandmarkGraph> dalm_graph;
 
     std::vector<std::vector<std::vector<int>>> operators_eff_lookup;
