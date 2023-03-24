@@ -161,22 +161,23 @@ ALIASES["dalai-opt-2023"] = [
     "cycle_generator=johnson,additional_constraint_generators=[lmcut_constraints()]))",
 ]
 
-dalai_sat_lm_factory = "dalm_uaa(dalm_reasonable_orders_hps(dalm_rhw(max_preconditions=12)))"
+dalai_sat_lm_factory = "dalm_reasonable_orders_hps(dalm_rhw(max_preconditions=12))"
 ALIASES["dalai-sat-2023"] = [
     "--search",
     "--if-unit-cost",
-    f"let(hlm,dalm_greedy_hs({dalai_sat_lm_factory},pref=true),"
+    f"let(hlm_first,dalm_greedy_hs({dalai_sat_lm_factory},pref=true),"
+    f"let(hlm,dalm_greedy_hs(dalm_uaa({dalai_sat_lm_factory}),pref=true),"
     """iterated([
-        lazy_greedy([hlm],preferred=[hlm],boost=1),
+        lazy_greedy([hlm_first],preferred=[hlm_first],boost=1),
         lazy_wastar([hlm],preferred=[hlm],boost=1,w=5),
         lazy_wastar([hlm],preferred=[hlm],boost=1,w=3),
         lazy_wastar([hlm],preferred=[hlm],boost=1,w=2),
         lazy_wastar([hlm],preferred=[hlm],boost=1,w=1)
     ],repeat_last=true,continue_on_fail=true))""",
     "--if-non-unit-cost",
-    f"let(hlm_orig,dalm_greedy_hs({dalai_sat_lm_factory},pref=true),"
+    f"let(hlm_orig,dalm_greedy_hs(dalm_uaa({dalai_sat_lm_factory}),pref=true),"
     f"let(hlm_unit,dalm_greedy_hs({dalai_sat_lm_factory},transform=adapt_costs(one),pref=true),"
-    f"let(hlm_plus,dalm_greedy_hs({dalai_sat_lm_factory},transform=adapt_costs(plusone),pref=true),"
+    f"let(hlm_plus,dalm_greedy_hs(dalm_uaa({dalai_sat_lm_factory}),transform=adapt_costs(plusone),pref=true),"
     """iterated([
         lazy_greedy([hlm_unit],preferred=[hlm_unit],boost=1,cost_type=one,reopen_closed=false),
         lazy_greedy([hlm_plus],preferred=[hlm_plus],boost=1,reopen_closed=false),

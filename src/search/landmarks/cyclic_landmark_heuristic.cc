@@ -5,6 +5,7 @@
 #include "../operator_counting/constraint_generator.h"
 #include "../operator_counting/landmark_constraints.h"
 #include "../plugins/plugin.h"
+#include "../task_utils/task_properties.h"
 #include "../utils/markup.h"
 
 using namespace std;
@@ -19,7 +20,11 @@ CyclicLandmarkHeuristic::CyclicLandmarkHeuristic(const plugins::Options &opts)
         make_shared<operator_counting::LandmarkConstraints>(
             opts, lm_graph, lm_status_manager));
     for (auto &constraint_generator : opts.get_list<shared_ptr<operator_counting::ConstraintGenerator>>("additional_constraint_generators")) {
-        constraint_generators.push_back(constraint_generator);
+        /* FIXME: This is an ugly hack to avoid that the LM-Cut constraint
+            generator is added in our dalai-opt-2023 alias... */
+        if (!task_properties::has_axioms(task_proxy)) {
+            constraint_generators.push_back(constraint_generator);
+        }
     }
     prepare_linear_program();
 }
