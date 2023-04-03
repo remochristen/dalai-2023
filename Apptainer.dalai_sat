@@ -55,7 +55,7 @@ Stage: run
 ## Define meta data
 %labels
 Name        DALAI 2023 Satisficing
-Description TODO
+Description Disjunctive Action Landmarks All In -- Path-dependent landmark heuristic search tailored to find some solution fast and improve improve it iteratively.
 Authors     Clemens Büchner <clemens.buechner@unibas.ch>, Remo Christen <remo.christen@unibas.ch>, Salomé Eriksson <salome.eriksson@unibas.ch>, Thomas Keller <tho.keller@unibas.ch>
 License     GPL 3
 Tracks      satisficing

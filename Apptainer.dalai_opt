@@ -81,7 +81,7 @@ Stage: run
 ## Define meta data
 %labels
 Name        DALAI 2023 Optimal
-Description TODO
+Description Disjunctive Action Landmarks All In -- Path-dependent landmark heuristic search tailored to find optimal solutions.
 Authors     Clemens Büchner <clemens.buechner@unibas.ch>, Remo Christen <remo.christen@unibas.ch>, Salomé Eriksson <salome.eriksson@unibas.ch>, Thomas Keller <tho.keller@unibas.ch>
 License     GPL 3
 Tracks      optimal
