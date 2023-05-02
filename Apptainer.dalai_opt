@@ -92,6 +92,6 @@ SupportsUniversallyQuantifiedEffects            yes
 SupportsNegativePreconditions                   yes
 SupportsEqualityPreconditions                   yes
 SupportsInequalityPreconditions                 yes
-SupportsConditionalEffects                      TODO
+SupportsConditionalEffects                      no
 SupportsImplyPreconditions                      yes
 
