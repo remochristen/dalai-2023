@@ -149,7 +149,7 @@ ALIASES["dalai-agl-2023"] = [
     "lazy_greedy([hlm],preferred=[hlm],boost=0))",
     "--if-non-unit-cost",
     f"let(hlm,dalm_sum({dalai_agl_lm_factory},transform=adapt_costs(one),pref=true),"
-    "lazy_greedy([hlm],preferred=[hlm],boost=0,cost_type=one,reopen_closed=false))"
+    "lazy_greedy([hlm],preferred=[hlm],boost=0,cost_type=one,reopen_closed=false))",
     # Append --always to be on the safe side if we want to append
     # additional options later.
     "--always",
