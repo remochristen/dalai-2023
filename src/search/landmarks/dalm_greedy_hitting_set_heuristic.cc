@@ -68,25 +68,19 @@ namespace landmarks {
             while (chosen_op_id  == -1) {
                 if (hits_to_op.back().empty()) {
                     hits_to_op.pop_back();
+                    if (hits_to_op.empty()) {
+                        return h;
+                    }
                     continue;
                 }
                 int op_id = hits_to_op.back().back();
                 int num_hits = op_hits[op_id];
                 if (num_hits == (int) hits_to_op.size()) {
                     chosen_op_id = op_id;
-                } else {
-                    if (hits_to_op.back().size() == 1) {
-                        if (hits_to_op.size() == 1) {
-                            return h;
-                        }
-                        hits_to_op.pop_back();
-                    } else {
-                        hits_to_op.back().pop_back();
-                    }
-                    if (num_hits != 0) {
-                        hits_to_op[num_hits-1].push_back(op_id);
-                    }
+                } else if (num_hits != 0) {
+                    hits_to_op[num_hits-1].push_back(op_id);
                 }
+                hits_to_op.back().pop_back();
             }
 
             h += task_proxy.get_operators()[chosen_op_id].get_cost();
