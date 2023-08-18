@@ -41,11 +41,11 @@ CONFIGS = [
             f"let(hlm,dalm_greedy_hs(dalm_uaa({dalai_sat_lm_factory}),pref=true),"
             "let(hff,ff(),"
             "iterated(["
-                "lazy_greedy([hlm_first],preferred=[hlm_first],boost=1),"
-                "lazy_wastar([hlm],preferred=[hlm],boost=1,w=5),"
-                "lazy_wastar([hlm],preferred=[hlm],boost=1,w=3),"
-                "lazy_wastar([hlm],preferred=[hlm],boost=1,w=2),"
-                "lazy_wastar([hlm],preferred=[hlm],boost=1,w=1)"
+                "lazy_greedy([hff,hlm_first],preferred=[hff,hlm_first],boost=1),"
+                "lazy_wastar([hff,hlm],preferred=[hff,hlm],boost=1,w=5),"
+                "lazy_wastar([hff,hlm],preferred=[hff,hlm],boost=1,w=3),"
+                "lazy_wastar([hff,hlm],preferred=[hff,hlm],boost=1,w=2),"
+                "lazy_wastar([hff,hlm],preferred=[hff,hlm],boost=1,w=1)"
             "],repeat_last=true,continue_on_fail=true))))",
             "--if-non-unit-cost",
             f"let(hlm_orig,dalm_greedy_hs(dalm_uaa({dalai_sat_lm_factory}),pref=true),"

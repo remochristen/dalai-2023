@@ -48,13 +48,13 @@ CONFIGS = [
             (
                 f"let(hlm,dalm_sum({dalai_agl_lm_factory},pref=true),"
                 "let(hff,ff(),"
-                "lazy_greedy([hlm],preferred=[hlm],boost=0)))"
+                "lazy_greedy([hff,hlm],preferred=[hff,hlm],boost=0)))"
             ),
             "--if-non-unit-cost",
             (
                 f"let(hlm,dalm_sum({dalai_agl_lm_factory},transform=adapt_costs(one),pref=true),"
                 "let(hff,ff(),"
-                "lazy_greedy([hlm],preferred=[hlm],boost=0,cost_type=one,reopen_closed=false)))"
+                "lazy_greedy([hff,hlm],preferred=[hff,hlm],boost=0,cost_type=one,reopen_closed=false)))"
             ),
             # Append --always to be on the safe side if we want to append
             # additional options later.
