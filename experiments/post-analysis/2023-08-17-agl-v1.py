@@ -12,62 +12,54 @@ from common_setup import IssueConfig, IssueExperiment
 
 ARCHIVE_PATH = "buechner/ipc23-landmarks/post-analysis"
 DIR = os.path.dirname(os.path.abspath(__file__))
-BENCHMARKS_DIR = os.environ["IPC2023_SAT_BENCHMARKS"]
+BENCHMARKS_DIR = os.environ["IPC2023_AGL_BENCHMARKS"]
 REVISIONS = [
     ("35c7de4b85bc0a9dff9038848891fe92ba25e2ac", ""),
 ]
 BUILD = "release"
 
-dalai_sat_lm_factory = "dalm_reasonable_orders_hps(dalm_rhw(max_preconditions=12))"
+dalai_agl_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()))"
 CONFIGS = [
     IssueConfig(
-        f"lama",
+        f"lama-first",
         [],
         build_options=[BUILD],
-        driver_options=["--build", BUILD, "--alias", "lama"],
+        driver_options=[
+            "--build", BUILD,
+            "--alias", "lama-first",
+            "--overall-time-limit", "5m",
+        ],
     ),
     IssueConfig(
-        f"dalai-sat",
+        f"dalai-agl",
         [],
         build_options=[BUILD],
-        driver_options=["--build", BUILD, "--alias", "dalai-sat-2023"],
+        driver_options=[
+            "--build", BUILD,
+            "--alias", "dalai-agl-2023",
+            "--overall-time-limit", "5m",
+        ],
     ),
     IssueConfig(
-        f"dalai-sat-plus-ff",
+        f"dalai-agl-plus-ff",
         [
             "--search",
             "--if-unit-cost",
-            f"let(hlm_first,dalm_greedy_hs({dalai_sat_lm_factory},pref=true),"
-            f"let(hlm,dalm_greedy_hs(dalm_uaa({dalai_sat_lm_factory}),pref=true),"
-            "let(hff,ff(),"
-            "iterated(["
-                "lazy_greedy([hlm_first],preferred=[hlm_first],boost=1),"
-                "lazy_wastar([hlm],preferred=[hlm],boost=1,w=5),"
-                "lazy_wastar([hlm],preferred=[hlm],boost=1,w=3),"
-                "lazy_wastar([hlm],preferred=[hlm],boost=1,w=2),"
-                "lazy_wastar([hlm],preferred=[hlm],boost=1,w=1)"
-            "],repeat_last=true,continue_on_fail=true))))",
+            (
+                f"let(hlm,dalm_sum({dalai_agl_lm_factory},pref=true),"
+                "lazy_greedy([hlm],preferred=[hlm],boost=0))"
+            ),
             "--if-non-unit-cost",
-            f"let(hlm_orig,dalm_greedy_hs(dalm_uaa({dalai_sat_lm_factory}),pref=true),"
-            f"let(hlm_unit,dalm_greedy_hs({dalai_sat_lm_factory},transform=adapt_costs(one),pref=true),"
-            f"let(hlm_plus,dalm_greedy_hs(dalm_uaa({dalai_sat_lm_factory}),transform=adapt_costs(plusone),pref=true),"
-            "let(hff_unit, ff(transform=adapt_costs(one)),"
-            "let(hff_plus, ff(transform=adapt_costs(plusone)),"
-            "iterated(["
-                "lazy_greedy([hff_unit,hlm_unit],preferred=[hff_unit,hlm_unit],boost=1,cost_type=one,reopen_closed=false),"
-                "lazy_greedy([hff_plus,hlm_plus],preferred=[hff_plus,hlm_plus],boost=1,reopen_closed=false),"
-                "lazy_wastar([hff_plus,hlm_plus],preferred=[hff_plus,hlm_plus],boost=1,w=5),"
-                "lazy_wastar([hff_plus,hlm_plus],preferred=[hff_plus,hlm_plus],boost=1,w=3),"
-                "lazy_wastar([hff_plus,hlm_plus],preferred=[hff_plus,hlm_plus],boost=1,w=2),"
-                "lazy_wastar([hff_plus,hlm_plus],preferred=[hff_plus,hlm_plus],boost=1,w=1),"
-                "lazy_wastar([hff_plus,hlm_orig],preferred=[hff_plus,hlm_orig],boost=1,w=1)"
-            "],repeat_last=true,continue_on_fail=true))))))",
+            (
+                f"let(hlm,dalm_sum({dalai_agl_lm_factory},transform=adapt_costs(one),pref=true),"
+                "lazy_greedy([hlm],preferred=[hlm],boost=0,cost_type=one,reopen_closed=false))"
+            ),
             # Append --always to be on the safe side if we want to append
             # additional options later.
             "--always",
         ],
         build_options=[BUILD],
-        driver_options=["--build", BUILD],
+        driver_options=["--build", BUILD, "--overall-time-limit", "5m",],
     ),
 ]
 
@@ -85,7 +77,7 @@ ENVIRONMENT = BaselSlurmEnvironment(
     partition="infai_3",
     # memory_per_cpu="7744M",
     email="remo.christen@unibas.ch",
-    export=["PATH", "IPC23_SAT_BENCHMARKS"])
+    export=["PATH", "IPC23_AGL_BENCHMARKS"])
 
 if common_setup.is_test_run():
     SUITE = ["rubiks-cube:p01.pddl"]
