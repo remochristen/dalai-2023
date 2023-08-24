@@ -27,10 +27,8 @@ parser.add_pattern(
     type=int)
 
 parser.add_pattern(
-    "initial_h_dalm"
-    r"New best heuristic value for dalm_sum.*: (\d+)",
+    "initial_h_lm",
+    r"Initial heuristic value for (?:dalm_sum|landmark_sum).*: (\d+)",
     type=int)
-
-
 
 parser.parse()

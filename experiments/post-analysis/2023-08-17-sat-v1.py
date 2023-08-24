@@ -17,6 +17,10 @@ REVISIONS = [
     ("35c7de4b85bc0a9dff9038848891fe92ba25e2ac", ""),
 ]
 BUILD = "release"
+DRIVER_OPTIONS = [
+    "--build", BUILD,
+    "--overall-memory-limit", "8192M",
+]
 
 dalai_sat_lm_factory = "dalm_reasonable_orders_hps(dalm_rhw(max_preconditions=12))"
 CONFIGS = [
@@ -24,13 +28,46 @@ CONFIGS = [
         f"lama",
         [],
         build_options=[BUILD],
-        driver_options=["--build", BUILD, "--alias", "lama"],
+        driver_options=DRIVER_OPTIONS + ["--alias", "lama"],
+    ),
+    IssueConfig(
+        f"lama-minus-ff",
+        [
+            "--search",
+            "--if-unit-cost",
+            f"let(hlm, landmark_sum(lm_reasonable_orders_hps(lm_rhw()),pref=false),"
+            """iterated([
+                lazy_greedy([hlm],preferred=[hlm]),
+                lazy_wastar([hlm],preferred=[hlm],w=5),
+                lazy_wastar([hlm],preferred=[hlm],w=3),
+                lazy_wastar([hlm],preferred=[hlm],w=2),
+                lazy_wastar([hlm],preferred=[hlm],w=1)
+             ],repeat_last=true,continue_on_fail=true))""",
+            "--if-non-unit-cost",
+            f"let(hlm1, landmark_sum(lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false),"
+            f"let(hlm2, landmark_sum(lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(plusone),pref=false),"
+            """iterated([
+                lazy_greedy([hlm1],preferred=[hlm1],
+                     cost_type=one,reopen_closed=false),
+                lazy_greedy([hlm2],preferred=[hlm2],
+                     reopen_closed=false),
+                lazy_wastar([hlm2],preferred=[hlm2],w=5),
+                lazy_wastar([hlm2],preferred=[hlm2],w=3),
+                lazy_wastar([hlm2],preferred=[hlm2],w=2),
+                lazy_wastar([hlm2],preferred=[hlm2],w=1)
+            ],repeat_last=true,continue_on_fail=true)))""",
+            # Append --always to be on the safe side if we want to append
+            # additional options later.
+            "--always"
+        ],
+        build_options=[BUILD],
+        driver_options=DRIVER_OPTIONS,
     ),
     IssueConfig(
         f"dalai-sat",
         [],
         build_options=[BUILD],
-        driver_options=["--build", BUILD, "--alias", "dalai-sat-2023"],
+        driver_options=DRIVER_OPTIONS + ["--alias", "dalai-sat-2023"],
     ),
     IssueConfig(
         f"dalai-sat-plus-ff",
@@ -67,7 +104,7 @@ CONFIGS = [
             "--always",
         ],
         build_options=[BUILD],
-        driver_options=["--build", BUILD],
+        driver_options=DRIVER_OPTIONS,
     ),
 ]
 
@@ -83,12 +120,12 @@ SUITE = [
 
 ENVIRONMENT = BaselSlurmEnvironment(
     partition="infai_3",
-    # memory_per_cpu="7744M",
+    memory_per_cpu="8500M",
     email="remo.christen@unibas.ch",
     export=["PATH", "IPC23_SAT_BENCHMARKS"])
 
 if common_setup.is_test_run():
-    SUITE = ["rubiks-cube:p01.pddl"]
+    SUITE = ["rubiks-cube:p02.pddl"]
     ENVIRONMENT = LocalEnvironment(processes=4)
 
 exp = IssueExperiment(
@@ -102,6 +139,7 @@ exp.add_parser(exp.EXITCODE_PARSER)
 exp.add_parser(exp.ANYTIME_SEARCH_PARSER)
 exp.add_parser(exp.PLANNER_PARSER)
 exp.add_parser("../landmark_parser.py")
+exp.add_parser("../anytime_parser.py")
 
 ATTRIBUTES = IssueExperiment.DEFAULT_TABLE_ATTRIBUTES + [
     Attribute("landmarks", min_wins=False),
@@ -109,6 +147,8 @@ ATTRIBUTES = IssueExperiment.DEFAULT_TABLE_ATTRIBUTES + [
     Attribute("landmarks_conjunctive", min_wins=False),
     Attribute("orderings", min_wins=False),
     Attribute("lmgraph_generation_time", min_wins=True),
+    Attribute("all_costs", absolute=True, min_wins=True),
+    Attribute("num_iterations", min_wins=False),
 ]
 
 exp.add_step('build', exp.build)

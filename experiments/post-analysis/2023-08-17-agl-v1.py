@@ -17,6 +17,11 @@ REVISIONS = [
     ("35c7de4b85bc0a9dff9038848891fe92ba25e2ac", ""),
 ]
 BUILD = "release"
+DRIVER_OPTIONS = [
+    "--build", BUILD,
+    "--overall-time-limit", "5m",
+    "--overall-memory-limit", "8192M",
+]
 
 dalai_agl_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()))"
 CONFIGS = [
@@ -24,21 +29,7 @@ CONFIGS = [
         f"lama-first",
         [],
         build_options=[BUILD],
-        driver_options=[
-            "--build", BUILD,
-            "--alias", "lama-first",
-            "--overall-time-limit", "5m",
-        ],
-    ),
-    IssueConfig(
-        f"dalai-agl",
-        [],
-        build_options=[BUILD],
-        driver_options=[
-            "--build", BUILD,
-            "--alias", "dalai-agl-2023",
-            "--overall-time-limit", "5m",
-        ],
+        driver_options=DRIVER_OPTIONS + ["--alias", "lama-first"],
     ),
     IssueConfig(
         f"dalai-agl-plus-ff",
@@ -61,7 +52,23 @@ CONFIGS = [
             "--always",
         ],
         build_options=[BUILD],
-        driver_options=["--build", BUILD, "--overall-time-limit", "5m",],
+        driver_options=DRIVER_OPTIONS,
+    ),
+    IssueConfig(
+        f"dalai-agl",
+        [],
+        build_options=[BUILD],
+        driver_options=DRIVER_OPTIONS + ["--alias", "dalai-agl-2023"],
+    ),
+    IssueConfig(
+        f"lama-first-minus-ff",
+        [
+            "--search",
+            "let(hlm, landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()),transform=adapt_costs(one),pref=false),"
+            "lazy_greedy([hlm],preferred=[hlm], cost_type=one,reopen_closed=false))"
+        ],
+        build_options=[BUILD],
+        driver_options=DRIVER_OPTIONS,
     ),
 ]
 
@@ -77,12 +84,12 @@ SUITE = [
 
 ENVIRONMENT = BaselSlurmEnvironment(
     partition="infai_3",
-    # memory_per_cpu="7744M",
+    memory_per_cpu="8500M",
     email="remo.christen@unibas.ch",
     export=["PATH", "IPC23_AGL_BENCHMARKS"])
 
 if common_setup.is_test_run():
-    SUITE = ["rubiks-cube:p01.pddl"]
+    SUITE = ["rubiks-cube:p03.pddl"]
     ENVIRONMENT = LocalEnvironment(processes=4)
 
 exp = IssueExperiment(
@@ -103,6 +110,7 @@ ATTRIBUTES = IssueExperiment.DEFAULT_TABLE_ATTRIBUTES + [
     Attribute("landmarks_conjunctive", min_wins=False),
     Attribute("orderings", min_wins=False),
     Attribute("lmgraph_generation_time", min_wins=True),
+    Attribute("initial_h_lm", min_wins=True),
 ]
 
 exp.add_step('build', exp.build)
