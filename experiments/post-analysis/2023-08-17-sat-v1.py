@@ -119,6 +119,8 @@ exp.add_absolute_report_step(attributes=ATTRIBUTES)
 # exp.add_scatter_plot_step(relative=True, attributes=["search_time", "cost"])
 # exp.add_scatter_plot_step(relative=False, attributes=["search_time", "cost"])
 
+exp.add_parse_again_step()
+
 exp.add_archive_step(ARCHIVE_PATH)
 
 exp.run_steps()

@@ -11,7 +11,7 @@ parser.add_pattern(
     type=float)
 parser.add_pattern(
     "landmarks",
-    r"Landmark graph contains (\d+) landmarks, of which \d+ are disjunctive and \d+ are conjunctive.",
+    r"Landmark graph contains (\d+) landmarks",
     type=int)
 parser.add_pattern(
     "landmarks_disjunctive",
@@ -25,5 +25,12 @@ parser.add_pattern(
     "orderings",
     r"Landmark graph contains (\d+) orderings.",
     type=int)
+
+parser.add_pattern(
+    "initial_h_dalm"
+    r"New best heuristic value for dalm_sum.*: (\d+)",
+    type=int)
+
+
 
 parser.parse()

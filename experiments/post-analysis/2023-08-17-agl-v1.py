@@ -93,7 +93,7 @@ exp = IssueExperiment(
 exp.add_suite(BENCHMARKS_DIR, SUITE)
 
 exp.add_parser(exp.EXITCODE_PARSER)
-exp.add_parser(exp.ANYTIME_SEARCH_PARSER)
+exp.add_parser(exp.SINGLE_SEARCH_PARSER)
 exp.add_parser(exp.PLANNER_PARSER)
 exp.add_parser("../landmark_parser.py")
 
@@ -112,6 +112,8 @@ exp.add_fetcher(name='fetch', merge=True)
 exp.add_absolute_report_step(attributes=ATTRIBUTES)
 # exp.add_scatter_plot_step(relative=True, attributes=["search_time", "cost"])
 # exp.add_scatter_plot_step(relative=False, attributes=["search_time", "cost"])
+
+exp.add_parse_again_step()
 
 exp.add_archive_step(ARCHIVE_PATH)
 
