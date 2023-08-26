@@ -140,6 +140,7 @@ exp.add_parser(exp.ANYTIME_SEARCH_PARSER)
 exp.add_parser(exp.PLANNER_PARSER)
 exp.add_parser("../landmark_parser.py")
 exp.add_parser("../anytime_parser.py")
+exp.add_parser("../dalai-sat-parser.py")
 
 ATTRIBUTES = IssueExperiment.DEFAULT_TABLE_ATTRIBUTES + [
     Attribute("landmarks", min_wins=False),
@@ -149,6 +150,12 @@ ATTRIBUTES = IssueExperiment.DEFAULT_TABLE_ATTRIBUTES + [
     Attribute("lmgraph_generation_time", min_wins=True),
     Attribute("all_costs", absolute=True, min_wins=True),
     Attribute("num_iterations", min_wins=False),
+    Attribute("too_large_uaa_dalms"),
+    Attribute("first_cost"),
+    Attribute("all-expansions"),
+    Attribute("all-evaluations"),
+    Attribute("all-search_time"),
+    Attribute("landmarks-uaa"),
 ]
 
 exp.add_step('build', exp.build)
