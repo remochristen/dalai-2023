@@ -1,0 +1,107 @@
+#! /usr/bin/env python3
+
+import os
+import sys
+
+from lab.environments import LocalEnvironment, BaselSlurmEnvironment
+from lab.reports import Attribute
+
+sys.path.append(os.getcwd() + '/..')
+import common_setup
+from common_setup import IssueConfig, IssueExperiment
+
+ARCHIVE_PATH = "buechner/ipc23-landmarks/post-analysis"
+DIR = os.path.dirname(os.path.abspath(__file__))
+BENCHMARKS_DIR = os.environ["IPC2023_OPT_BENCHMARKS"]
+REVISIONS = [
+    ("35c7de4b85bc0a9dff9038848891fe92ba25e2ac", ""),
+]
+BUILD = "release"
+DRIVER_OPTIONS = [
+    "--build", BUILD,
+    "--overall-time-limit", "30m",
+    "--overall-memory-limit", "8192M",
+]
+
+dalai_opt_lm_factory = "fact_translator(lm_reasonable_orders_hps(lm_rhw()))"
+CONFIGS = [
+    IssueConfig(
+        f"dalai-opt",
+        [],
+        build_options=[BUILD],
+        driver_options=DRIVER_OPTIONS + ["--alias", "dalai-opt-2023"],
+    ),
+    IssueConfig(
+        f"lmastar-uniform",
+        ["--search", "astar(landmark_cost_partitioning(lm_rhw(), optimal=false))"],
+        build_options=[BUILD],
+        driver_options=DRIVER_OPTIONS,
+    ),
+    IssueConfig(
+        f"lmastar-optimal",
+        ["--search", "astar(landmark_cost_partitioning(lm_rhw(), optimal=true))"],
+        build_options=[BUILD],
+        driver_options=DRIVER_OPTIONS,
+    ),
+    IssueConfig(
+        f"bjolp",
+        [],
+        build_options=[BUILD],
+        driver_options=DRIVER_OPTIONS + ["--alias", "seq-opt-bjolp"],
+    ),
+]
+
+SUITE = [
+    "folding",
+    "labyrinth",
+    "quantum-layout",
+    "recharging-robots",
+    "ricochet-robots",
+    "rubiks-cube",
+    "slitherlink",
+]
+
+ENVIRONMENT = BaselSlurmEnvironment(
+    partition="infai_3",
+    memory_per_cpu="8500M",
+    email="clemens.buechner@unibas.ch",
+    export=["PATH", "IPC23_OPT_BENCHMARKS"])
+
+if common_setup.is_test_run():
+    SUITE = ["rubiks-cube:p03.pddl"]
+    ENVIRONMENT = LocalEnvironment(processes=4)
+
+exp = IssueExperiment(
+    revisions=REVISIONS,
+    configs=CONFIGS,
+    environment=ENVIRONMENT,
+)
+exp.add_suite(BENCHMARKS_DIR, SUITE)
+
+exp.add_parser(exp.EXITCODE_PARSER)
+exp.add_parser(exp.SINGLE_SEARCH_PARSER)
+exp.add_parser(exp.PLANNER_PARSER)
+exp.add_parser("../landmark_parser.py")
+
+ATTRIBUTES = IssueExperiment.DEFAULT_TABLE_ATTRIBUTES + [
+    Attribute("landmarks", min_wins=False),
+    Attribute("landmarks_disjunctive", min_wins=False),
+    Attribute("landmarks_conjunctive", min_wins=False),
+    Attribute("orderings", min_wins=False),
+    Attribute("lmgraph_generation_time", min_wins=True),
+    Attribute("initial_h_lm", min_wins=True),
+]
+
+exp.add_step('build', exp.build)
+exp.add_step('start', exp.start_runs)
+exp.add_fetcher(name='fetch', merge=True)
+
+exp.add_absolute_report_step(attributes=ATTRIBUTES)
+# exp.add_scatter_plot_step(relative=True, attributes=["search_time", "cost"])
+# exp.add_scatter_plot_step(relative=False, attributes=["search_time", "cost"])
+
+exp.add_parse_again_step()
+
+exp.add_archive_step(ARCHIVE_PATH)
+
+exp.run_steps()
